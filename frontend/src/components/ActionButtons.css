@@ -1,0 +1,50 @@
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.action-btn {
+  padding: 10px 15px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.stop-btn {
+  background: #ff6961;
+  color: white;
+}
+
+.train-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.reset-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.action-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+/* Loader */
+.loading {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid white;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
