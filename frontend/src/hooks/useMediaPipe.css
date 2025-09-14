@@ -1,0 +1,12 @@
+.contenedor-video {
+    position: relative;
+    width: 640px; /* Asegúrate de que este tamaño coincida con tu video */
+    height: 480px; /* Asegúrate de que este tamaño coincida con tu video */
+}
+
+#video-webcam,
+#lienzo-mano {
+    position: absolute;
+    top: 0;
+    left: 0;
+}

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
@@ -11,10 +11,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import joblib
 from datetime import datetime
+import asyncio
 
-app = FastAPI(title="Vocal Recognition API", version="1.0.0")
+app = FastAPI(title="API de Reconocimiento de Vocales", version="1.0.0")
 
-# Configurar CORS
+# Configurar CORS para permitir peticiones desde cualquier origen
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,315 +24,313 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelos de datos
-class LandmarkData(BaseModel):
-    vowel: str  # A, E, I, O, U
-    landmarks: List[List[float]]  # Array de 21 puntos [x, y, z]
-    timestamp: str = None
+# --- Modelos de datos para la API ---
+class DatosMuestra(BaseModel):
+    """Modelo para los datos de una muestra (una vocal con sus puntos clave)."""
+    vocal: str
+    puntos_clave: List[List[float]]
+    fecha_hora: str = None
 
-class PredictionRequest(BaseModel):
-    landmarks: List[List[float]]
+class SolicitudPrediccion(BaseModel):
+    """Modelo para la solicitud de predicción (solo los puntos clave)."""
+    puntos_clave: List[List[float]]
 
-# Variables globales
-DATA_DIR = "data_storage"
-MODELS_DIR = "models"
-VOCALS = ["A", "E", "I", "O", "U"]
-MAX_SAMPLES = 100
+# --- Variables globales y configuración ---
+DIR_DATOS = "data_storage"
+DIR_MODELOS = "models"
+VOCALES = ["A", "E", "I", "O", "U"]
+MAX_MUESTRAS = 100
+
+# Cola de muestras en memoria para guardar de forma asíncrona
+cola_muestras: Dict[str, List[dict]] = {vocal: [] for vocal in VOCALES}
+esta_guardando = {vocal: False for vocal in VOCALES} # Bandera para evitar escrituras simultáneas
 
 # Crear directorios si no existen
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(DIR_DATOS, exist_ok=True)
+os.makedirs(DIR_MODELOS, exist_ok=True)
 
-# Funciones auxiliares
-def load_data():
-    """Carga todos los datos guardados"""
-    data = {vocal: [] for vocal in VOCALS}
-    
-    for vocal in VOCALS:
-        file_path = os.path.join(DATA_DIR, f"{vocal.lower()}_samples.json")
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
-                data[vocal] = json.load(f)
-    
-    return data
+# --- Funciones auxiliares ---
+def obtener_ruta_archivo(vocal: str):
+    """Devuelve la ruta del archivo de datos para una vocal específica."""
+    return os.path.join(DIR_DATOS, f"{vocal.lower()}_samples.json")
 
-def save_sample(vocal: str, landmarks: List[List[float]], timestamp: str):
-    """Guarda una muestra de landmarks"""
-    file_path = os.path.join(DATA_DIR, f"{vocal.lower()}_samples.json")
-    
-    # Cargar datos existentes
-    samples = []
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as f:
-            samples = json.load(f)
-    
-    # Añadir nueva muestra
-    sample = {
-        "landmarks": landmarks,
-        "timestamp": timestamp
-    }
-    samples.append(sample)
-    
-    # Limitar a MAX_SAMPLES
-    if len(samples) > MAX_SAMPLES:
-        samples = samples[-MAX_SAMPLES:]
-    
-    # Guardar
-    with open(file_path, 'w') as f:
-        json.dump(samples, f, indent=2)
+def cargar_datos_existentes():
+    """Carga todos los datos de muestra guardados en el disco."""
+    datos_cargados = {vocal: [] for vocal in VOCALES}
+    for vocal in VOCALES:
+        ruta_archivo = obtener_ruta_archivo(vocal)
+        if os.path.exists(ruta_archivo):
+            with open(ruta_archivo, 'r') as f:
+                datos_cargados[vocal] = json.load(f)
+    return datos_cargados
 
-def get_progress():
-    """Obtiene el progreso de recolección"""
-    progress = {}
+def guardar_cola_en_disco(vocal: str, datos_cola: List[dict]):
+    """Guarda los datos de la cola en el archivo de forma segura y atómica."""
+    ruta_temporal = obtener_ruta_archivo(vocal) + ".tmp"
+    ruta_final = obtener_ruta_archivo(vocal)
     
-    for vocal in VOCALS:
-        file_path = os.path.join(DATA_DIR, f"{vocal.lower()}_samples.json")
-        count = 0
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-                count = len(data)
+    muestras_existentes = []
+    if os.path.exists(ruta_final):
+        with open(ruta_final, 'r') as f:
+            muestras_existentes = json.load(f)
+    
+    # Combinar datos existentes con la cola y limitar a MAX_MUESTRAS
+    todas_las_muestras = muestras_existentes + datos_cola
+    if len(todas_las_muestras) > MAX_MUESTRAS:
+        todas_las_muestras = todas_las_muestras[-MAX_MUESTRAS:]
+    
+    with open(ruta_temporal, 'w') as f:
+        json.dump(todas_las_muestras, f, indent=2)
+    
+    os.replace(ruta_temporal, ruta_final)
+    print(f"[{datetime.now()}] Muestras de '{vocal}' guardadas en disco. Total: {len(todas_las_muestras)}")
+
+def obtener_progreso():
+    """Calcula y devuelve el progreso de recolección de cada vocal."""
+    progreso = {}
+    for vocal in VOCALES:
+        ruta_archivo = obtener_ruta_archivo(vocal)
+        cantidad = 0
+        if os.path.exists(ruta_archivo):
+            with open(ruta_archivo, 'r') as f:
+                datos = json.load(f)
+                cantidad = len(datos)
         
-        progress[vocal] = {
-            "count": count,
-            "max": MAX_SAMPLES,
-            "percentage": (count / MAX_SAMPLES) * 100
+        progreso[vocal] = {
+            "cantidad": cantidad,
+            "max": MAX_MUESTRAS,
+            "porcentaje": (cantidad / MAX_MUESTRAS) * 100
         }
-    
-    return progress
+    return progreso
 
-def prepare_training_data():
-    """Prepara los datos para entrenamiento"""
-    data = load_data()
+def preparar_datos_entrenamiento():
+    """Prepara los datos recolectados para ser usados en el entrenamiento del modelo."""
+    datos = cargar_datos_existentes()
     
-    X = []
-    y = []
+    X = [] # Características (puntos clave aplanados)
+    y = [] # Etiquetas (vocales)
     
-    for vocal in VOCALS:
-        samples = data[vocal]
-        for sample in samples:
-            # Aplanar los landmarks (21 puntos * 3 coordenadas = 63 features)
-            landmarks_flat = np.array(sample["landmarks"]).flatten()
-            X.append(landmarks_flat)
+    for vocal in VOCALES:
+        muestras = datos[vocal]
+        for muestra in muestras:
+            # Aplanar los puntos clave (21 puntos * 3 coordenadas = 63 características)
+            puntos_clave_aplanados = np.array(muestra["landmarks"]).flatten()
+            X.append(puntos_clave_aplanados)
             y.append(vocal)
-    
     return np.array(X), np.array(y)
 
-# Endpoints
+# --- Endpoints de la API ---
 @app.get("/")
-async def root():
-    return {"message": "Vocal Recognition API", "status": "running"}
+async def raiz():
+    """Endpoint principal de la API."""
+    return {"mensaje": "API de Reconocimiento de Vocales", "estado": "funcionando"}
 
 @app.post("/api/samples")
-async def add_sample(data: LandmarkData):
-    """Recibe y guarda una muestra de landmarks"""
-    try:
-        print(f"Recibiendo datos: vocal={data.vowel}, landmarks_len={len(data.landmarks)}")
-        
-        # Validar vocal
-        if data.vowel.upper() not in VOCALS:
-            raise HTTPException(status_code=400, detail="Vocal inválida")
-        
-        # Verificar si ya se alcanzó el límite
-        current_progress = get_progress()
-        vowel_upper = data.vowel.upper()
-        if current_progress[vowel_upper]["count"] >= MAX_SAMPLES:
-            raise HTTPException(status_code=400, detail=f"Ya se alcanzó el límite de {MAX_SAMPLES} muestras para la vocal '{vowel_upper}'")
-        
-        # Validar landmarks (21 puntos con 3 coordenadas cada uno)
-        if len(data.landmarks) != 21 or any(len(point) != 3 for point in data.landmarks):
-            raise HTTPException(status_code=400, detail="Landmarks inválidos")
-        
-        # Timestamp
-        timestamp = data.timestamp or datetime.now().isoformat()
-        
-        # Guardar muestra
-        save_sample(vowel_upper, data.landmarks, timestamp)
-        
-        # Obtener progreso actualizado
-        progress = get_progress()
-        
+async def agregar_muestra(datos: DatosMuestra, tareas_fondo: BackgroundTasks):
+    """Recibe y guarda una muestra de puntos clave en la cola de procesamiento."""
+    vocal_mayus = datos.vocal.upper()
+    
+    progreso_actual = obtener_progreso()
+    if progreso_actual[vocal_mayus]["cantidad"] + len(cola_muestras[vocal_mayus]) >= MAX_MUESTRAS:
         return {
-            "message": f"Muestra de '{vowel_upper}' guardada",
-            "progress": progress[vowel_upper]
+            "mensaje": f"Ya se alcanzó el límite de {MAX_MUESTRAS} muestras para la vocal '{vocal_mayus}'",
+            "progreso": progreso_actual[vocal_mayus]
         }
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error en add_sample: {str(e)}")
-        print(f"Tipo de error: {type(e).__name__}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    
+    fecha_hora = datos.fecha_hora or datetime.now().isoformat()
+    muestra = {"landmarks": datos.puntos_clave, "fecha_hora": fecha_hora}
+    cola_muestras[vocal_mayus].append(muestra)
+    
+    # Agregar la tarea de guardado si no hay una en curso
+    if not esta_guardando[vocal_mayus]:
+        tareas_fondo.add_task(tarea_guardar_cola_en_disco, vocal_mayus)
+    
+    return {
+        "mensaje": f"Muestra de '{vocal_mayus}' añadida a la cola",
+        "progreso": {
+            "cantidad": progreso_actual[vocal_mayus]["cantidad"] + len(cola_muestras[vocal_mayus]),
+            "max": MAX_MUESTRAS,
+            "porcentaje": min(100, (progreso_actual[vocal_mayus]["cantidad"] + len(cola_muestras[vocal_mayus])) / MAX_MUESTRAS * 100)
+        }
+    }
+
+async def tarea_guardar_cola_en_disco(vocal: str):
+    """Tarea de fondo para guardar las muestras en lotes."""
+    esta_guardando[vocal] = True
+    try:
+        # Esperar un poco para agrupar más muestras
+        await asyncio.sleep(1) 
+        
+        cola_a_guardar = cola_muestras[vocal]
+        cola_muestras[vocal] = [] # Limpiar la cola en memoria
+        
+        if cola_a_guardar:
+            guardar_cola_en_disco(vocal, cola_a_guardar)
+    finally:
+        esta_guardando[vocal] = False
 
 @app.get("/api/progress")
-async def get_collection_progress():
-    """Devuelve el progreso de recolección de todas las vocales"""
+async def obtener_progreso_recoleccion():
+    """Devuelve el progreso de recolección de todas las vocales."""
     try:
-        print("Obteniendo progreso...")
-        progress = get_progress()
-        print(f"Progreso obtenido: {progress}")
+        progreso = obtener_progreso()
+        for vocal in VOCALES:
+            progreso[vocal]["cantidad"] += len(cola_muestras[vocal])
+            progreso[vocal]["porcentaje"] = min(100, (progreso[vocal]["cantidad"] / MAX_MUESTRAS) * 100)
         
-        # Calcular progreso total
-        total_samples = sum(p["count"] for p in progress.values())
-        total_max = len(VOCALS) * MAX_SAMPLES
-        total_percentage = (total_samples / total_max) * 100
+        total_muestras = sum(p["cantidad"] for p in progreso.values())
+        total_maximo = len(VOCALES) * MAX_MUESTRAS
+        porcentaje_total = (total_muestras / total_maximo) * 100
         
         return {
-            "vocals": progress,
+            "vocales": progreso,
             "total": {
-                "samples": total_samples,
-                "max": total_max,
-                "percentage": total_percentage
+                "muestras": total_muestras,
+                "max": total_maximo,
+                "porcentaje": porcentaje_total
             }
         }
     except Exception as e:
-        print(f"Error en get_collection_progress: {str(e)}")
-        print(f"Tipo de error: {type(e).__name__}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/train")
-async def train_model():
-    """Entrena el modelo de clasificación"""
+async def entrenar_modelo():
+    """Entrena el modelo de clasificación con los datos recolectados."""
     try:
-        # Verificar que hay suficientes datos
-        progress = get_progress()
-        insufficient_data = [vocal for vocal, data in progress.items() if data["count"] < MAX_SAMPLES]
+        progreso = obtener_progreso()
+        datos_insuficientes = [vocal for vocal, datos in progreso.items() if datos["cantidad"] < MAX_MUESTRAS]
         
-        if insufficient_data:
+        if datos_insuficientes:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Datos insuficientes para: {', '.join(insufficient_data)}"
+                detail=f"Datos insuficientes para: {', '.join(datos_insuficientes)}. Recolecta 100 muestras para cada vocal."
             )
         
-        # Preparar datos
-        X, y = prepare_training_data()
+        X, y = preparar_datos_entrenamiento()
         
         if len(X) == 0:
             raise HTTPException(status_code=400, detail="No hay datos para entrenar")
         
-        # Codificar etiquetas
-        label_encoder = LabelEncoder()
-        y_encoded = label_encoder.fit_transform(y)
+        # Codificar etiquetas de las vocales a números
+        codificador_etiquetas = LabelEncoder()
+        y_codificada = codificador_etiquetas.fit_transform(y)
         
-        # Dividir datos
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+        # Dividir datos en conjuntos de entrenamiento y prueba
+        X_entrenamiento, X_prueba, y_entrenamiento, y_prueba = train_test_split(
+            X, y_codificada, test_size=0.2, random_state=42, stratify=y_codificada
         )
         
-        # Crear modelo
-        model = keras.Sequential([
+        # Crear modelo de red neuronal
+        modelo = keras.Sequential([
             keras.layers.Dense(128, activation='relu', input_shape=(63,)),
             keras.layers.Dropout(0.3),
             keras.layers.Dense(64, activation='relu'),
             keras.layers.Dropout(0.3),
             keras.layers.Dense(32, activation='relu'),
-            keras.layers.Dense(len(VOCALS), activation='softmax')
+            keras.layers.Dense(len(VOCALES), activation='softmax')
         ])
         
         # Compilar modelo
-        model.compile(
+        modelo.compile(
             optimizer='adam',
             loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
         
         # Entrenar modelo
-        history = model.fit(
-            X_train, y_train,
+        historial = modelo.fit(
+            X_entrenamiento, y_entrenamiento,
             epochs=50,
             batch_size=32,
-            validation_data=(X_test, y_test),
+            validation_data=(X_prueba, y_prueba),
             verbose=0
         )
         
         # Evaluar modelo
-        test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
+        perdida_prueba, precision_prueba = modelo.evaluate(X_prueba, y_prueba, verbose=0)
         
-        # Guardar modelo y encoder
-        model_path = os.path.join(MODELS_DIR, "vocales_model.h5")
-        encoder_path = os.path.join(MODELS_DIR, "label_encoder.pkl")
+        # Guardar modelo y codificador
+        ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
+        ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
         
-        model.save(model_path)
-        joblib.dump(label_encoder, encoder_path)
+        modelo.save(ruta_modelo)
+        joblib.dump(codificador_etiquetas, ruta_codificador)
         
         return {
-            "message": "Entrenamiento completado ✅",
-            "accuracy": float(test_accuracy),
-            "loss": float(test_loss),
-            "samples_used": len(X),
-            "model_saved": model_path
+            "mensaje": "Entrenamiento completado ✅",
+            "precision": float(precision_prueba),
+            "perdida": float(perdida_prueba),
+            "muestras_usadas": len(X),
+            "modelo_guardado_en": ruta_modelo
         }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/predict")
-async def predict_vocal(data: PredictionRequest):
-    """Predice la vocal basada en landmarks"""
+async def predecir_vocal(datos: SolicitudPrediccion):
+    """Predice la vocal basada en los puntos clave proporcionados."""
     try:
-        # Verificar que el modelo existe
-        model_path = os.path.join(MODELS_DIR, "vocales_model.h5")
-        encoder_path = os.path.join(MODELS_DIR, "label_encoder.pkl")
+        ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
+        ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
         
-        if not os.path.exists(model_path) or not os.path.exists(encoder_path):
-            raise HTTPException(status_code=400, detail="Modelo no entrenado")
+        if not os.path.exists(ruta_modelo) or not os.path.exists(ruta_codificador):
+            raise HTTPException(status_code=400, detail="Modelo no entrenado. Por favor, entrena el modelo primero.")
         
-        # Cargar modelo y encoder
-        model = keras.models.load_model(model_path)
-        label_encoder = joblib.load(encoder_path)
+        # Cargar modelo y codificador
+        modelo = keras.models.load_model(ruta_modelo)
+        codificador_etiquetas = joblib.load(ruta_codificador)
         
-        # Validar landmarks
-        if len(data.landmarks) != 21 or any(len(point) != 3 for point in data.landmarks):
-            raise HTTPException(status_code=400, detail="Landmarks inválidos")
+        if len(datos.puntos_clave) != 21 or any(len(punto) != 3 for punto in datos.puntos_clave):
+            raise HTTPException(status_code=400, detail="Puntos clave inválidos")
         
-        # Preparar datos
-        landmarks_flat = np.array(data.landmarks).flatten().reshape(1, -1)
+        # Preparar datos para la predicción
+        puntos_clave_aplanados = np.array(datos.puntos_clave).flatten().reshape(1, -1)
         
-        # Predecir
-        predictions = model.predict(landmarks_flat, verbose=0)
-        predicted_class = np.argmax(predictions[0])
-        confidence = float(predictions[0][predicted_class])
+        # Predecir la clase
+        predicciones = modelo.predict(puntos_clave_aplanados, verbose=0)
+        clase_predicha = np.argmax(predicciones[0])
+        confianza = float(predicciones[0][clase_predicha])
         
-        # Decodificar etiqueta
-        predicted_vocal = label_encoder.inverse_transform([predicted_class])[0]
+        # Decodificar la etiqueta numérica a la vocal
+        vocal_predicha = codificador_etiquetas.inverse_transform([clase_predicha])[0]
+        
+        # Obtener probabilidades para todas las clases
+        probabilidades = {
+            vocal: float(predicciones[0][i]) 
+            for i, vocal in enumerate(codificador_etiquetas.classes_)
+        }
         
         return {
-            "prediction": predicted_vocal,
-            "confidence": confidence,
-            "all_probabilities": {
-                vocal: float(predictions[0][i]) 
-                for i, vocal in enumerate(label_encoder.classes_)
-            }
+            "prediccion": vocal_predicha,
+            "confianza": confianza,
+            "todas_las_probabilidades": probabilidades
         }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/reset")
-async def reset_data():
-    """Reinicia todos los datos de recolección"""
+async def reiniciar_datos():
+    """Reinicia todos los datos de recolección y el modelo entrenado."""
     try:
-        # Eliminar archivos de datos
-        for vocal in VOCALS:
-            file_path = os.path.join(DATA_DIR, f"{vocal.lower()}_samples.json")
-            if os.path.exists(file_path):
-                os.remove(file_path)
+        for vocal in VOCALES:
+            ruta_archivo = obtener_ruta_archivo(vocal)
+            if os.path.exists(ruta_archivo):
+                os.remove(ruta_archivo)
+            cola_muestras[vocal] = []
         
-        # Eliminar modelo entrenado
-        model_path = os.path.join(MODELS_DIR, "vocales_model.h5")
-        encoder_path = os.path.join(MODELS_DIR, "label_encoder.pkl")
+        ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
+        ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
         
-        if os.path.exists(model_path):
-            os.remove(model_path)
-        if os.path.exists(encoder_path):
-            os.remove(encoder_path)
+        if os.path.exists(ruta_modelo):
+            os.remove(ruta_modelo)
+        if os.path.exists(ruta_codificador):
+            os.remove(ruta_codificador)
         
         return {
-            "message": "Datos reiniciados correctamente",
-            "progress": get_progress()
+            "mensaje": "Datos reiniciados correctamente",
+            "progreso": obtener_progreso()
         }
     
     except Exception as e:
@@ -339,4 +338,4 @@ async def reset_data():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8002)
+    uvicorn.run(app, host="localhost", port=8001)

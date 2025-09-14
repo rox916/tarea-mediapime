@@ -1,4 +1,5 @@
 import React from 'react';
+import './CameraSection.css';
 console.log("CameraSection renderizado ✅");
 
 const CameraSection = ({ 
@@ -7,8 +8,10 @@ const CameraSection = ({
   isModelTrained, 
   isPredicting, 
   prediction, 
+  predictionConfidence,
   togglePrediction,
   isInitialized,
+  isCameraReady,
   error
 }) => {
   return (
@@ -35,13 +38,12 @@ const CameraSection = ({
           autoPlay 
           muted 
           playsInline
-          style={{ display: isInitialized && !error ? 'block' : 'none' }}
         />
         <canvas 
-          ref={canvasRef} 
-          className="canvas-overlay"
-          style={{ display: isInitialized && !error ? 'block' : 'none' }}
-        />
+            ref={canvasRef} 
+            className="canvas-overlay"
+            style={{ display: isCameraReady && !error ? 'block' : 'none' }}
+          />
       </div>
 
       {isModelTrained && isInitialized && !error && (
@@ -61,6 +63,11 @@ const CameraSection = ({
               <div className="prediction-result">
                 {prediction || 'Muestra tu mano...'}
               </div>
+              {prediction && predictionConfidence && (
+                <div className="prediction-confidence">
+                  Confianza: {(predictionConfidence * 100).toFixed(1)}%
+                </div>
+              )}
             </div>
           )}
         </div>
