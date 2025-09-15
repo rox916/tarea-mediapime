@@ -1,8 +1,7 @@
 import React from 'react';
 import './CameraSection.css';
-console.log("CameraSection renderizado ✅");
 
-const CameraSection = ({ 
+const CameraSection = React.memo(({ 
   videoRef, 
   canvasRef, 
   isModelTrained, 
@@ -74,6 +73,9 @@ const CameraSection = ({
       )}
     </div>
   );
-};
+});
+
+// Función de comparación para React.memo - evita re-renders innecesarios
+CameraSection.displayName = 'CameraSection';
 
 export default CameraSection;

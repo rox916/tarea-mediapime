@@ -19,6 +19,7 @@ function App() {
     stopCollecting,
     trainModel,
     resetData,
+    deleteVowelData,
     togglePrediction,
     canTrain,
     getTotalSamples,
@@ -80,6 +81,7 @@ function App() {
               stopCollecting={stopCollecting}
               trainModel={trainModel}
               resetData={resetData}
+              deleteVowelData={deleteVowelData}
             />
           </div>
         </div>

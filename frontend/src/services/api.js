@@ -65,5 +65,16 @@ export const apiService = {
       console.error('Error resetting data:', error);
       throw error;
     }
+  },
+
+  // Eliminar datos de una vocal específica
+  async deleteVowelData(vowel) {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/samples/${vowel}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting data for vowel ${vowel}:`, error);
+      throw error;
+    }
   }
 };
