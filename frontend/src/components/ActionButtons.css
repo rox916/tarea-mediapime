@@ -2,46 +2,71 @@
   display: flex;
   gap: 12px;
   margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
+/* Base general */
 .action-btn {
-  padding: 10px 15px;
-  font-size: 14px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  letter-spacing: 0.5px;
+  min-width: 160px;
 }
 
-.stop-btn {
-  background: #ff6961;
-  color: white;
+/* Hover + Active effects */
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
 }
-
-.train-btn {
-  background: #4caf50;
-  color: white;
+.action-btn:active {
+  transform: scale(0.97);
 }
-
-.reset-btn {
-  background: #2196f3;
-  color: white;
-}
-
 .action-btn:disabled {
-  background: #aaa;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Loader */
+/* 🎛️ Estilos por tipo */
+.stop-btn {
+  background: linear-gradient(135deg, #e63946, #d62828);
+}
+.stop-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff6b6b, #d62828);
+}
+
+.train-btn {
+  background: linear-gradient(135deg, #3a86ff, #266dd3);
+}
+.train-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5cb8ff, #266dd3);
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #f4a261, #e76f51);
+}
+.reset-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffb480, #e76f51);
+}
+
+/* Loader dentro del botón */
 .loading {
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid white;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.8);
   border-top: 2px solid transparent;
   border-radius: 50%;
-  margin-right: 6px;
+  margin-right: 8px;
   animation: spin 1s linear infinite;
 }
 

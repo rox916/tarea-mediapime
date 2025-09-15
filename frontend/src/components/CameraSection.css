@@ -1,0 +1,88 @@
+.camera-container {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Video y canvas alineados */
+.camera-feed,
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.canvas-overlay {
+  pointer-events: none;
+}
+
+/* --- PREDICCIÓN --- */
+
+/* Botón centrado */
+.prediction-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.prediction-toggle {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.prediction-toggle.active {
+  background: linear-gradient(135deg, #ef476f, #d62828);
+  color: #fff;
+}
+
+.prediction-toggle:not(.active) {
+  background: linear-gradient(135deg, #06d6a0, #118ab2);
+  color: #fff;
+}
+
+/* Cuadro de predicción más compacto */
+.prediction-display {
+  margin: 15px auto 0 auto;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  text-align: center;
+  width: 200px; /* 👈 compacto */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* Letra predicha */
+.prediction-letter {
+  font-size: 3rem; /* reducido */
+  font-weight: 800;
+  margin: 0.3rem 0;
+  color: #06d6a0;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.4);
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Confianza */
+.prediction-confidence {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #f4a261;
+  margin-top: 0.3rem;
+}

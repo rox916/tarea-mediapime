@@ -1,14 +1,16 @@
 import React from 'react';
-console.log("CameraSection renderizado ✅");
+import './CameraSection.css';
 
-const CameraSection = ({ 
+const CameraSection = React.memo(({ 
   videoRef, 
   canvasRef, 
   isModelTrained, 
   isPredicting, 
   prediction, 
+  predictionConfidence,
   togglePrediction,
   isInitialized,
+  isCameraReady,
   error
 }) => {
   return (
@@ -35,12 +37,11 @@ const CameraSection = ({
           autoPlay 
           muted 
           playsInline
-          style={{ display: isInitialized && !error ? 'block' : 'none' }}
         />
         <canvas 
           ref={canvasRef} 
           className="canvas-overlay"
-          style={{ display: isInitialized && !error ? 'block' : 'none' }}
+          style={{ display: isCameraReady && !error ? 'block' : 'none' }}
         />
       </div>
 
@@ -57,16 +58,23 @@ const CameraSection = ({
           
           {isPredicting && (
             <div className="prediction-display">
-              <h3>Predicción:</h3>
-              <div className="prediction-result">
-                {prediction || 'Muestra tu mano...'}
+              <h3>Predicción</h3>
+              <div className="prediction-letter">
+                {prediction || '...'}
               </div>
+              {prediction && predictionConfidence && (
+                <div className="prediction-confidence">
+                  Confianza: {(predictionConfidence * 100).toFixed(1)}%
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
     </div>
   );
-};
+});
+
+CameraSection.displayName = 'CameraSection';
 
 export default CameraSection;

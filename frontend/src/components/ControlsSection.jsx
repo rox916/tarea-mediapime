@@ -15,6 +15,7 @@ const ControlsSection = ({
   stopCollecting,
   trainModel,
   resetData,
+  deleteVowelData,
   getTotalSamples,
   getRequiredSamples
 }) => {
@@ -35,6 +36,7 @@ const ControlsSection = ({
         currentVowel={currentVowel}
         startCollecting={startCollecting}
         stopCollecting={stopCollecting}
+        deleteVowelData={deleteVowelData}
       />
 
       {/* Botones de acción */}

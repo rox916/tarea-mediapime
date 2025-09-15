@@ -1,0 +1,21 @@
+.contenedor-video {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 640px; /* Mantén un límite máximo */
+  aspect-ratio: 4 / 3; /* Mantiene proporción */
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+#video-webcam,
+#lienzo-mano {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;   /* 👈 Coinciden en tamaño */
+  height: 100%;  /* 👈 Coinciden en tamaño */
+  object-fit: cover;
+  transform: scaleX(-1); /* Efecto espejo */
+}

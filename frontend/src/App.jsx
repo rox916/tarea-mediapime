@@ -1,188 +1,109 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import CameraSection from './components/CameraSection';
-import ControlsSection from './components/ControlsSection';
-import { useMediaPipe } from './hooks/useMediaPipe';
-import { apiService } from './services/api';
-
-const VOWELS = ['A', 'E', 'I', 'O', 'U'];
-const SAMPLES_PER_VOWEL = 100;
+import React, { useRef, useState } from 'react';
+import { useMediaPipe } from './hooks/useMediaPipe.js';
+import { useVocalLogic } from './hooks/useVocalLogic.js';
+import CameraSection from './components/CameraSection.jsx';
+import ControlsSection from './components/ControlsSection.jsx';
+import StatusMessage from './components/StatusMessage.jsx';
+import ConfirmModal from './components/ConfirmModal.jsx';
 
 function App() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Estados principales
-  const [isCollecting, setIsCollecting] = useState(false);
-  const [currentVowel, setCurrentVowel] = useState(null);
-  const [progress, setProgress] = useState({
-    vocals: {},
-    total: { samples: 0, max: VOWELS.length * SAMPLES_PER_VOWEL, percentage: 0 }
+  // Estado del modal
+  const [modalData, setModalData] = useState({
+    open: false,
+    message: "",
+    onConfirm: null
   });
-  const [prediction, setPrediction] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
-  const [isTraining, setIsTraining] = useState(false);
-  const [isModelTrained, setIsModelTrained] = useState(false);
-  const [isPredicting, setIsPredicting] = useState(false);
 
-  // Cargar progreso inicial al montar
-  useEffect(() => {
-    fetchProgress();
-  }, []);
+  // Estado y lógica de la app
+  const {
+    appState,
+    handleLandmarks,
+    handlePredict,
+    startCollecting,
+    stopCollecting,
+    trainModel,
+    resetData,
+    deleteVowelData,
+    togglePrediction,
+    canTrain,
+    getTotalSamples,
+    getRequiredSamples,
+    VOWELS,
+    SAMPLES_PER_VOWEL
+  } = useVocalLogic({ setModalData }); // 👈 le pasamos el setter del modal
 
-  const fetchProgress = async () => {
-    try {
-      const progressData = await apiService.getProgress();
-      setProgress(progressData);
-    } catch (error) {
-      console.error('Error fetching progress:', error);
-    }
-  };
-
-  const handleLandmarks = useCallback(async (landmarks, vowel) => {
-    try {
-      await apiService.sendLandmarks(landmarks, vowel);
-      await fetchProgress(); // actualizar barras
-    } catch (error) {
-      console.error('Error sending landmarks:', error);
-      
-      // Si se alcanzó el límite, detener la recolección
-      if (error.response?.status === 400 && error.response?.data?.detail?.includes('límite')) {
-        stopCollecting();
-        setStatusMessage(`✅ Vocal '${vowel}' completada. Se alcanzó el límite de 100 muestras.`);
-      } else {
-        setStatusMessage('Error al enviar datos: ' + (error.response?.data?.detail || error.message));
-      }
-    }
-  }, []);
-
-  const handlePredict = useCallback(async (landmarks) => {
-    try {
-      const result = await apiService.predictVowel(landmarks);
-      setPrediction(result);
-    } catch (error) {
-      console.error('Error predicting vowel:', error);
-    }
-  }, []);
-
-  // Inicializar MediaPipe
-  const { handsRef, cameraRef, isInitialized, error } = useMediaPipe({
+  // Hook de MediaPipe
+  const { isInitialized, isCameraReady, error } = useMediaPipe({
     videoRef,
     canvasRef,
-    isCollecting,
-    currentVowel,
-    isModelTrained,
-    isPredicting,
+    isCollecting: appState.isCollecting,
+    currentVowel: appState.currentVowel,
+    isModelTrained: appState.isModelTrained,
+    isPredicting: appState.isPredicting,
     onLandmarks: handleLandmarks,
-    onPredict: handlePredict
+    onPredict: handlePredict,
   });
 
-  // Funciones de control
-  const startCollecting = (vowel) => {
-    setCurrentVowel(vowel);
-    setIsCollecting(true);
-    setStatusMessage(`Recolectando muestras para la vocal '${vowel}'...`);
-  };
-
-  const stopCollecting = () => {
-    setIsCollecting(false);
-    setCurrentVowel(null);
-    setStatusMessage('Recolección detenida.');
-  };
-
-  const trainModel = async () => {
-    setIsTraining(true);
-    setStatusMessage('Entrenando modelo... Esto puede tomar unos minutos.');
-
-    try {
-      const response = await apiService.trainModel();
-      setStatusMessage(response.message || '🎉 Entrenamiento completado.');
-      setIsModelTrained(true);
-      setIsPredicting(true);
-    } catch (error) {
-      setStatusMessage(
-        'Error al entrenar el modelo: ' +
-          (error.response?.data?.detail || error.message)
-      );
-    } finally {
-      setIsTraining(false);
-    }
-  };
-
-  const resetData = async () => {
-    try {
-      await apiService.resetData();
-      setProgress({
-        vocals: {},
-        total: { samples: 0, max: VOWELS.length * SAMPLES_PER_VOWEL, percentage: 0 }
-      });
-      setIsModelTrained(false);
-      setIsPredicting(false);
-      setPrediction('');
-      setStatusMessage('Datos reiniciados correctamente.');
-    } catch (error) {
-      setStatusMessage(
-        'Error al reiniciar datos: ' +
-          (error.response?.data?.detail || error.message)
-      );
-    }
-  };
-
-  const togglePrediction = () => {
-    setIsPredicting(!isPredicting);
-    if (!isPredicting) {
-      setPrediction('');
-    }
-  };
-
-  // Helpers
-  const getTotalSamples = () => {
-    if (!progress.vocals) return 0;
-    return Object.values(progress.vocals).reduce((sum, v) => sum + (v.count || 0), 0);
-  };
-
-  const getRequiredSamples = () => VOWELS.length * SAMPLES_PER_VOWEL;
-
-  const canTrain = () => {
-    if (!progress.vocals) return false;
-    return VOWELS.every(
-      (vowel) => (progress.vocals[vowel]?.count || 0) >= SAMPLES_PER_VOWEL
-    );
-  };
-
   return (
-    <div className="container">
-      <header className="header">
-        <h1>🤟 Entrenador de Vocales</h1>
-        <p>Reconocimiento de gestos de manos con MediaPipe y TensorFlow</p>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Reconocimiento de Vocales por Gestos</h1>
+        <p>Usa la cámara para capturar la posición de tu mano, recolectar muestras y entrenar un modelo de IA para identificar vocales.</p>
       </header>
 
-      <div className="main-content">
-        <CameraSection
-          videoRef={videoRef}
-          canvasRef={canvasRef}
-          isModelTrained={isModelTrained}
-          isPredicting={isPredicting}
-          prediction={prediction}
-          togglePrediction={togglePrediction}
-          isInitialized={isInitialized}
-          error={error}
-        />
+      <main className="app-main">
+        <div className="main-content">
+          <CameraSection
+            videoRef={videoRef}
+            canvasRef={canvasRef}
+            isModelTrained={appState.isModelTrained}
+            isPredicting={appState.isPredicting}
+            prediction={appState.prediction}
+            predictionConfidence={appState.predictionConfidence}
+            togglePrediction={togglePrediction}
+            isInitialized={isInitialized}
+            isCameraReady={isCameraReady}
+            error={error}
+          />
 
-        <ControlsSection
-          progress={progress}
-          isCollecting={isCollecting}
-          currentVowel={currentVowel}
-          isTraining={isTraining}
-          canTrain={canTrain}
-          statusMessage={statusMessage}
-          startCollecting={startCollecting}
-          stopCollecting={stopCollecting}
-          trainModel={trainModel}
-          resetData={resetData}
-          getTotalSamples={getTotalSamples}
-          getRequiredSamples={getRequiredSamples}
-        />
-      </div>
+          <div className="controls-and-info">
+            <StatusMessage message={appState.statusMessage} />
+
+            <ControlsSection
+              vowels={VOWELS}
+              progress={appState.vowelProgress}
+              samplesPerVowel={SAMPLES_PER_VOWEL}
+              isInitialized={isInitialized}
+              isCollecting={appState.isCollecting}
+              currentVowel={appState.currentVowel}
+              isTraining={appState.isTraining}
+              isPredicting={appState.isPredicting}
+              canTrain={canTrain}
+              getTotalSamples={getTotalSamples}
+              getRequiredSamples={getRequiredSamples}
+              startCollecting={startCollecting}
+              stopCollecting={stopCollecting}
+              trainModel={trainModel}
+              resetData={resetData}
+              deleteVowelData={deleteVowelData}
+            />
+          </div>
+        </div>
+      </main>
+
+      {/* Modal global */}
+      <ConfirmModal
+        isOpen={modalData.open}
+        message={modalData.message}
+        onConfirm={() => {
+          modalData.onConfirm?.();
+          setModalData({ open: false, message: "", onConfirm: null });
+        }}
+        onCancel={() => setModalData({ open: false, message: "", onConfirm: null })}
+      />
     </div>
   );
 }

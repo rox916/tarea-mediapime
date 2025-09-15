@@ -1,0 +1,115 @@
+:root {
+  --bg-gradient: linear-gradient(135deg, #355c9c, #4a80c7);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --header-bg: rgba(0, 0, 0, 0.25);
+  --footer-bg: rgba(0, 0, 0, 0.25);
+  --text-color: #f5f5f5;
+  --subtext-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 🎨 Global Theme */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-color);
+}
+
+/* Contenedor principal */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Encabezado */
+.app-header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--header-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2.2rem;
+  color: var(--text-color);
+}
+
+.app-header p {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  color: var(--subtext-color);
+}
+
+/* Layout principal */
+.app-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Tarjetas globales (cámara, controles, etc.) */
+.camera-section,
+.controls-section {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px var(--shadow-color);
+}
+
+/* Footer */
+.app-footer {
+  background: var(--footer-bg);
+  color: var(--text-color);
+  padding: 1rem;
+  text-align: center;
+}
+
+
+/* 📱 Responsividad */
+
+/* En pantallas medianas → apilar en una sola columna */
+@media (max-width: 900px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-section,
+  .controls-section {
+    width: 100%;
+  }
+}
+
+/* En móviles pequeños → ajustar tamaños de texto y paddings */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .app-header p {
+    font-size: 0.9rem;
+  }
+
+  .camera-section,
+  .controls-section {
+    padding: 1rem;
+  }
+}

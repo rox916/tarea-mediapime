@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8002/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 export const apiService = {
   // Obtener progreso de recolección
@@ -19,8 +19,8 @@ export const apiService = {
     try {
       const landmarkData = landmarks.map(point => [point.x, point.y, point.z]);
       await axios.post(`${API_BASE_URL}/samples`, {
-        landmarks: landmarkData,
-        vowel: vowel
+        puntos_clave: landmarkData,
+        vocal: vowel
       });
     } catch (error) {
       console.error('Error sending landmarks:', error);
@@ -33,9 +33,13 @@ export const apiService = {
     try {
       const landmarkData = landmarks.map(point => [point.x, point.y, point.z]);
       const response = await axios.post(`${API_BASE_URL}/predict`, {
-        landmarks: landmarkData
+        puntos_clave: landmarkData
       });
-      return response.data.prediction;
+      return {
+        prediction: response.data.prediccion,
+        confidence: response.data.confianza,
+        allProbabilities: response.data.todas_las_probabilidades
+      };
     } catch (error) {
       console.error('Error predicting vowel:', error);
       throw error;
@@ -59,6 +63,17 @@ export const apiService = {
       await axios.post(`${API_BASE_URL}/reset`);
     } catch (error) {
       console.error('Error resetting data:', error);
+      throw error;
+    }
+  },
+
+  // Eliminar datos de una vocal específica
+  async deleteVowelData(vowel) {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/samples/${vowel}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting data for vowel ${vowel}:`, error);
       throw error;
     }
   }

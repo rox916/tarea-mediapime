@@ -1,4 +1,5 @@
 import React from 'react';
+import './VowelControls.css';
 
 const VOWELS = ['A', 'E', 'I', 'O', 'U'];
 const SAMPLES_PER_VOWEL = 100;
@@ -8,7 +9,8 @@ const VowelControls = ({
   isCollecting, 
   currentVowel, 
   startCollecting, 
-  stopCollecting 
+  stopCollecting,
+  deleteVowelData 
 }) => {
   return (
     <div className="vowel-controls">
@@ -48,6 +50,17 @@ const VowelControls = ({
                   : `Recolectar '${vowel}' (${count}/${SAMPLES_PER_VOWEL})`
               }
             </button>
+            
+            {count > 0 && (
+              <button
+                className="delete-btn"
+                onClick={() => deleteVowelData(vowel)}
+                disabled={isCurrentlyCollecting}
+                title={`Eliminar datos de la vocal '${vowel}'`}
+              >
+                🗑️ Eliminar '{vowel}'
+              </button>
+            )}
           </div>
         );
       })}

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-// Conexiones entre los puntos de la mano
+// Conexiones entre los puntos de la mano, ya no se usa "window."
 const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [5,9],[9,10],[10,11],[11,12],
-  [9,13],[13,14],[14,15],[15,16],
-  [13,17],[17,18],[18,19],[19,20],
-  [0,17]
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [5, 9], [9, 10], [10, 11], [11, 12],
+  [9, 13], [13, 14], [14, 15], [15, 16],
+  [13, 17], [17, 18], [18, 19], [19, 20],
+  [0, 17]
 ];
 
 export const useMediaPipe = ({
@@ -23,15 +23,18 @@ export const useMediaPipe = ({
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const [error, setError] = useState(null);
 
   const onResults = useCallback((results) => {
     if (!canvasRef.current || !videoRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const video = videoRef.current;
     const ctx = canvas.getContext('2d');
 
+    // Se eliminó la lógica de JavaScript para el tamaño del canvas.
+    // Es mejor manejar el tamaño y el estilo con CSS.
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
@@ -41,34 +44,48 @@ export const useMediaPipe = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (results.multiHandLandmarks?.length) {
+      // Dibujar los puntos y las conexiones
       for (const landmarks of results.multiHandLandmarks) {
+        // Al usar los scripts de MediaPipe en index.html, estas funciones
+        // deberían estar disponibles. Se eliminaron las comprobaciones de "window.".
         window.drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 });
         window.drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2 });
-
+        
+        // Lógica de recolección y predicción
         if (isCollecting && currentVowel && onLandmarks) {
           onLandmarks(landmarks, currentVowel);
-        }
-        if (isModelTrained && !isCollecting && isPredicting && onPredict) {
+        } else if (isModelTrained && isPredicting && onPredict) {
           onPredict(landmarks);
         }
       }
     }
 
     ctx.restore();
-  }, [isCollecting, currentVowel, isModelTrained, isPredicting, onLandmarks, onPredict]);
+  }, [canvasRef, videoRef, isCollecting, currentVowel, isModelTrained, isPredicting, onLandmarks, onPredict]);
 
+  // useEffect 1: Se encarga de la cámara
   useEffect(() => {
     const initializeCamera = async () => {
       try {
         if (!videoRef.current) return;
+        
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
         });
+        
         videoRef.current.srcObject = stream;
-        await new Promise(resolve => { videoRef.current.onloadedmetadata = () => { videoRef.current.play(); resolve(); }; });
+        
+        await new Promise(resolve => {
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play();
+            resolve();
+          };
+        });
+        
+        setIsCameraReady(true);
         setError(null);
       } catch (err) {
-        console.error('Error al inicializar la cámara:', err);
+        console.error('❌ Error al acceder a la cámara:', err);
         setError('Error al acceder a la cámara: ' + err.message);
       }
     };
@@ -76,45 +93,49 @@ export const useMediaPipe = ({
     initializeCamera();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
+      if (videoRef.current && canvasRef.current) {
+          canvasRef.current.width = videoRef.current.videoWidth;
+          canvasRef.current.height = videoRef.current.videoHeight;
+        }
 
+    };
+  }, [videoRef]);
+
+  // useEffect 2: Se encarga de MediaPipe, solo se ejecuta cuando la cámara está lista
   useEffect(() => {
     const initializeMediaPipe = async () => {
       try {
-        if (!videoRef.current?.srcObject) return;
+        if (!isCameraReady || !window.Hands || !window.Camera) return;
 
-        const Hands = window.Hands;
-        const Camera = window.Camera;
-
-        if (!Hands || !Camera) throw new Error('MediaPipe no está cargado. ¿Cargaste los scripts en index.html?');
-
-        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        const hands = new window.Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
         hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         hands.onResults(onResults);
         handsRef.current = hands;
 
-        const camera = new Camera(videoRef.current, {
+        const camera = new window.Camera(videoRef.current, {
           onFrame: async () => { await hands.send({ image: videoRef.current }); },
           width: 640,
           height: 480
         });
         await camera.start();
         cameraRef.current = camera;
-
+        
         setIsInitialized(true);
+        setError(null);
       } catch (err) {
-        console.error('Error al inicializar MediaPipe:', err);
+        console.error('❌ Error al inicializar MediaPipe:', err);
         setError('Error al inicializar MediaPipe: ' + err.message);
       }
     };
 
-    const timer = setTimeout(initializeMediaPipe, 1000);
-    return () => { clearTimeout(timer); cameraRef.current?.stop(); };
-  }, [onResults]);
+    initializeMediaPipe();
 
-  return { handsRef, cameraRef, isInitialized, error };
+    // Función de limpieza para detener la cámara y los procesos de MediaPipe
+    return () => {
+      cameraRef.current?.stop();
+      handsRef.current?.close();
+    };
+  }, [isCameraReady, onResults, videoRef]);
+
+  return { handsRef, cameraRef, isInitialized, isCameraReady, error };
 };
