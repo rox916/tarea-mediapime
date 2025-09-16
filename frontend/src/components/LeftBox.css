@@ -1,0 +1,43 @@
+.left-box {
+  width: 250px;
+  height: 709px; /* o la altura que definas */
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border-radius: 14px;
+  box-shadow: 0 6px 16px var(--shadow-color);
+  padding: 2rem 1.5rem; /* ✅ más espacio arriba y a los lados */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center; /* ✅ centra horizontalmente */
+  text-align: center;  /* ✅ centra el texto */
+}
+
+.left-box h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.steps-list {
+  margin: 0;
+  padding-left: 1rem; /* reduce la sangría de números */
+  list-style: decimal;
+  color: var(--subtext-color);
+  line-height: 1.6;
+  font-size: 0.95rem;
+  text-align: left; /* ✅ mantiene los pasos alineados */
+}
+
+.steps-list li {
+  margin-bottom: 0.8rem;
+}
+
+.tip {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #f4d35e;
+  font-style: italic;
+}
+

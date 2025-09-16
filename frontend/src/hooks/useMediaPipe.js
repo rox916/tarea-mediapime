@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-// Conexiones entre los puntos de la mano, ya no se usa "window."
+// Conexiones entre los puntos de la mano
 const HAND_CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
   [0, 5], [5, 6], [6, 7], [7, 8],
@@ -33,8 +33,7 @@ export const useMediaPipe = ({
     const video = videoRef.current;
     const ctx = canvas.getContext('2d');
 
-    // Se eliminó la lógica de JavaScript para el tamaño del canvas.
-    // Es mejor manejar el tamaño y el estilo con CSS.
+    // Ajustar tamaño del canvas al del video
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
@@ -44,17 +43,16 @@ export const useMediaPipe = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (results.multiHandLandmarks?.length) {
-      // Dibujar los puntos y las conexiones
       for (const landmarks of results.multiHandLandmarks) {
-        // Al usar los scripts de MediaPipe en index.html, estas funciones
-        // deberían estar disponibles. Se eliminaron las comprobaciones de "window.".
+        // Dibujar conexiones y landmarks
         window.drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 });
         window.drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2 });
-        
-        // Lógica de recolección y predicción
+
+        // ✅ Llamamos por separado (sin else if)
         if (isCollecting && currentVowel && onLandmarks) {
           onLandmarks(landmarks, currentVowel);
-        } else if (isModelTrained && isPredicting && onPredict) {
+        }
+        if (isModelTrained && isPredicting && onPredict) {
           onPredict(landmarks);
         }
       }
@@ -63,25 +61,25 @@ export const useMediaPipe = ({
     ctx.restore();
   }, [canvasRef, videoRef, isCollecting, currentVowel, isModelTrained, isPredicting, onLandmarks, onPredict]);
 
-  // useEffect 1: Se encarga de la cámara
+  // useEffect 1: Inicializa la cámara
   useEffect(() => {
     const initializeCamera = async () => {
       try {
         if (!videoRef.current) return;
-        
+
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
         });
-        
+
         videoRef.current.srcObject = stream;
-        
+
         await new Promise(resolve => {
           videoRef.current.onloadedmetadata = () => {
             videoRef.current.play();
             resolve();
           };
         });
-        
+
         setIsCameraReady(true);
         setError(null);
       } catch (err) {
@@ -94,21 +92,27 @@ export const useMediaPipe = ({
 
     return () => {
       if (videoRef.current && canvasRef.current) {
-          canvasRef.current.width = videoRef.current.videoWidth;
-          canvasRef.current.height = videoRef.current.videoHeight;
-        }
-
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
+      }
     };
   }, [videoRef]);
 
-  // useEffect 2: Se encarga de MediaPipe, solo se ejecuta cuando la cámara está lista
+  // useEffect 2: Inicializa MediaPipe
   useEffect(() => {
     const initializeMediaPipe = async () => {
       try {
         if (!isCameraReady || !window.Hands || !window.Camera) return;
 
-        const hands = new window.Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        const hands = new window.Hands({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
         hands.onResults(onResults);
         handsRef.current = hands;
 
@@ -119,7 +123,7 @@ export const useMediaPipe = ({
         });
         await camera.start();
         cameraRef.current = camera;
-        
+
         setIsInitialized(true);
         setError(null);
       } catch (err) {
@@ -130,7 +134,6 @@ export const useMediaPipe = ({
 
     initializeMediaPipe();
 
-    // Función de limpieza para detener la cámara y los procesos de MediaPipe
     return () => {
       cameraRef.current?.stop();
       handsRef.current?.close();

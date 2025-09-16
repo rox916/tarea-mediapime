@@ -1,7 +1,8 @@
 .vowel-controls {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* tarjetas adaptables */
-  gap: 1rem; /* espacio entre tarjetas */
+  grid-template-columns: repeat(2, 1fr); /* ✅ 2 columnas fijas */
+  gap: 1rem;
   margin-top: 1rem;
 }
 
@@ -54,7 +55,7 @@
   transition: width 0.3s ease;
 }
 
-/* 🎛️ Botones */
+/* 🎛️ Botones de recolección */
 .collect-btn {
   width: 100%;
   padding: 0.45rem 0.8rem;
@@ -68,10 +69,10 @@
 }
 
 /* Estado normal */
-.collect-btn {
+.collect-btn:not(.active):not(.complete) {
   background: linear-gradient(135deg, #06d6a0, #118ab2);
 }
-.collect-btn:hover:not(:disabled) {
+.collect-btn:not(.active):not(.complete):hover {
   background: linear-gradient(135deg, #06ffc2, #118ab2);
 }
 
@@ -83,11 +84,14 @@
   background: linear-gradient(135deg, #ff6b81, #d62828);
 }
 
-/* Estado completado */
-.collect-btn:disabled {
-  background: #444;
+/* Estado completado ✅ */
+.collect-btn.complete {
+  background: #444;   /* gris fijo */
   cursor: not-allowed;
   color: #bbb;
+}
+.collect-btn.complete:hover {
+  background: #444;   /* no cambia en hover */
 }
 
 /* 🗑️ Botón de eliminar */
@@ -108,9 +112,36 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ⚡️ Contenedor especial para los botones de acción */
+.action-buttons-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  margin-top: 0.5rem;    /* separación con lo de arriba */
+  padding-bottom: 1rem; /* ✅ espacio inferior extra */
+}
+
+/* Ajuste de los botones dentro del grid */
+.action-buttons {
+  margin-top: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
 /* 📱 Responsive */
 @media (max-width: 768px) {
   .vowel-controls {
     grid-template-columns: 1fr; /* en móviles solo 1 por fila */
   }
+}
+
+/* Espacio específico para entrenar modelo */
+.action-btn.train-btn {
+  margin-bottom: 0.8rem;
 }
