@@ -1,4 +1,5 @@
 import React from 'react';
+import './VowelControls.css';
 
 const VOWELS = ['A', 'E', 'I', 'O', 'U'];
 const SAMPLES_PER_VOWEL = 100;

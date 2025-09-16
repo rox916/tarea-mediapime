@@ -1,120 +1,88 @@
-/* Estilos para el contenedor de la sección de la cámara */
-.camera-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background-color: #1e1e1e;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    color: #f0f0f0;
-    width: fit-content;
-    margin: 20px auto;
-}
-
-/* Título de la sección */
-.camera-section h2 {
-    color: #4CAF50;
-    margin-bottom: 15px;
-}
-
-/* Contenedor de cámara y lienzo */
 .camera-container {
-    position: relative;
-    width: 100%;
-    max-width: 640px;
-    margin: 0 auto;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-/* Feed de la cámara (video) */
-.camera-feed {
-    width: 100%;
-    height: auto;
-    display: block;
-    transform: scaleX(-1); /* Efecto espejo */
-}
-
-/* Overlay del canvas para dibujar los puntos */
+/* Video y canvas alineados */
+.camera-feed,
 .canvas-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    display: block;
-    transform: scaleX(-1); /* Efecto espejo */
-    pointer-events: none; /* Ignora eventos de clic/táctiles */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
 }
 
-/* Mensajes de estado (error, carga) */
-.error-message, .loading-message {
-    text-align: center;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-    width: 100%;
-    box-sizing: border-box;
+.canvas-overlay {
+  pointer-events: none;
 }
 
-.error-message {
-    background-color: #d32f2f;
-    color: white;
+/* --- PREDICCIÓN --- */
+
+/* Botón centrado */
+.prediction-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }
 
-.loading-message {
-    background-color: #ffa726;
-    color: #333;
+.prediction-toggle {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-/* Sección de predicción */
-.prediction-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: 20px;
+.prediction-toggle.active {
+  background: linear-gradient(135deg, #ef476f, #d62828);
+  color: #fff;
 }
 
-.prediction-controls button {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.prediction-toggle:not(.active) {
+  background: linear-gradient(135deg, #06d6a0, #118ab2);
+  color: #fff;
 }
 
-.prediction-controls button:hover {
-    background-color: #45a049;
-}
-
-.prediction-controls button.active {
-    background-color: #e57373;
-}
-
+/* Cuadro de predicción más compacto */
 .prediction-display {
-    margin-top: 15px;
-    text-align: center;
-    font-size: 18px;
+  margin: 15px auto 0 auto;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  text-align: center;
+  width: 200px; /* 👈 compacto */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-.prediction-result {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #4CAF50;
-    margin-top: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+/* Letra predicha */
+.prediction-letter {
+  font-size: 3rem; /* reducido */
+  font-weight: 800;
+  margin: 0.3rem 0;
+  color: #06d6a0;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.4);
+  animation: pop 0.3s ease;
 }
 
+@keyframes pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Confianza */
 .prediction-confidence {
-    font-size: 1.2rem;
-    color: #ffa726;
-    margin-top: 8px;
-    font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #f4a261;
+  margin-top: 0.3rem;
 }

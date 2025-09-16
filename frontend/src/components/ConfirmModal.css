@@ -1,0 +1,90 @@
+/* Overlay difuminado sutil */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35); /* oscurece pero deja ver el gradiente */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px); /* mantiene el efecto difuminado */
+}
+
+/* Caja principal tipo tarjeta */
+.modal-container {
+  background: var(--card-bg); /* translúcido */
+  backdrop-filter: blur(12px);
+  color: var(--text-color);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 20px var(--shadow-color);
+  text-align: center;
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* Título */
+.modal-title {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+/* Mensaje */
+.modal-message {
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  color: var(--subtext-color);
+}
+
+/* Botones */
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn-cancel {
+  background: #4a80c7; /* azul consistente con tu gradiente */
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #355c9c;
+}
+
+.btn-confirm {
+  background: #ef4444; /* rojo para destructivo */
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-confirm:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Animación */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

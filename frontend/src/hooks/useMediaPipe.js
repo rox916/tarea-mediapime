@@ -93,9 +93,11 @@ export const useMediaPipe = ({
     initializeCamera();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      }
+      if (videoRef.current && canvasRef.current) {
+          canvasRef.current.width = videoRef.current.videoWidth;
+          canvasRef.current.height = videoRef.current.videoHeight;
+        }
+
     };
   }, [videoRef]);
 

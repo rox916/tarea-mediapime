@@ -1,16 +1,26 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useState } from 'react';
+
 import { useMediaPipe } from './hooks/useMediaPipe.js';
 import { useVocalLogic } from './hooks/useVocalLogic.js';
 import CameraSection from './components/CameraSection.jsx';
 import ControlsSection from './components/ControlsSection.jsx';
 import StatusMessage from './components/StatusMessage.jsx';
-import SummaryInfo from './components/SummaryInfo.jsx';
+
+import ConfirmModal from './components/ConfirmModal.jsx';
 
 function App() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Todo el estado y la lógica de la app se extraen a este hook
+  // Estado del modal
+  const [modalData, setModalData] = useState({
+    open: false,
+    message: "",
+    onConfirm: null
+  });
+
+  // Estado y lógica de la app
   const {
     appState,
     handleLandmarks,
@@ -26,9 +36,9 @@ function App() {
     getRequiredSamples,
     VOWELS,
     SAMPLES_PER_VOWEL
-  } = useVocalLogic();
 
-  // El hook de MediaPipe se encarga solo de la cámara y los landmarks
+  } = useVocalLogic({ setModalData }); // 👈 le pasamos el setter del modal
+  // Hook de MediaPipe
   const { isInitialized, isCameraReady, error } = useMediaPipe({
     videoRef,
     canvasRef,
@@ -43,8 +53,9 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>🎙️ Reconocimiento de Vocales</h1>
-        <p>Entrena un modelo de IA para reconocer la forma de tu mano al pronunciar las vocales.</p>
+        <h1>Reconocimiento de Vocales por Gestos</h1>
+        <p>Usa la cámara para capturar la posición de tu mano, recolectar muestras y entrenar un modelo de IA para identificar vocales.</p>
+
       </header>
 
       <main className="app-main">
@@ -86,6 +97,17 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* Modal global */}
+      <ConfirmModal
+        isOpen={modalData.open}
+        message={modalData.message}
+        onConfirm={() => {
+          modalData.onConfirm?.();
+          setModalData({ open: false, message: "", onConfirm: null });
+        }}
+        onCancel={() => setModalData({ open: false, message: "", onConfirm: null })}
+      />
     </div>
   );
 }

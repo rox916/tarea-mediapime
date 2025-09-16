@@ -18,7 +18,8 @@ const STATUS_MESSAGES = {
   PREDICTION_ERROR_NO_MODEL: 'No hay modelo entrenado. Por favor, entrena el modelo primero.',
 };
 
-export const useVocalLogic = () => {
+export const useVocalLogic = ({ setModalData }) => {
+
   const [appState, setAppState] = useState({
     isCollecting: false,
     isTraining: false,
@@ -42,8 +43,9 @@ export const useVocalLogic = () => {
         const totalProgress = (totalSamples / totalRequired) * 100;
 
         const newStatusMessage = totalProgress >= 100 ? STATUS_MESSAGES.READY_TO_TRAIN : prev.statusMessage;
-        
-        // Normalizar la estructura de datos para que el frontend use 'count'
+
+
+        // Normalizar la estructura de datos
         const normalizedVowelProgress = {};
         Object.keys(progressData.vocales).forEach(vowel => {
           normalizedVowelProgress[vowel] = {
@@ -52,7 +54,7 @@ export const useVocalLogic = () => {
             percentage: progressData.vocales[vowel].porcentaje
           };
         });
-        
+
         return {
           ...prev,
           vowelProgress: {
@@ -71,51 +73,50 @@ export const useVocalLogic = () => {
     if (!appState.isCollecting) return;
     try {
       await apiService.sendLandmarks(landmarks, vowel);
-      // Actualizar inmediatamente después de enviar la muestra
+
       await fetchProgress();
     } catch (error) {
       console.error('Error al agregar muestra:', error);
     }
   }, [appState.isCollecting, fetchProgress]);
 
-  // Throttling para predicciones - evitar llamadas excesivas
+
+  // Throttling para predicciones
   const lastPredictionTime = useRef(0);
   const predictionInProgress = useRef(false);
-  const PREDICTION_THROTTLE_MS = 200; // Máximo 5 predicciones por segundo
+  const PREDICTION_THROTTLE_MS = 200;
 
   const handlePredict = useCallback(async (landmarks) => {
     if (!appState.isPredicting || predictionInProgress.current) return;
-    
+
     const now = Date.now();
     if (now - lastPredictionTime.current < PREDICTION_THROTTLE_MS) {
-      return; // Throttle: ignorar si es muy pronto
+      return;
     }
-    
+
     predictionInProgress.current = true;
     lastPredictionTime.current = now;
-    
+
     try {
       const result = await apiService.predictVowel(landmarks);
-      
-      // Optimización: solo actualizar si la predicción cambió significativamente
+
       setAppState(prev => {
         const confidenceChanged = Math.abs((prev.predictionConfidence || 0) - result.confidence) > 0.05;
         const predictionChanged = prev.prediction !== result.prediction;
-        
+
         if (predictionChanged || confidenceChanged) {
           return {
-            ...prev, 
+            ...prev,
             prediction: result.prediction,
             predictionConfidence: result.confidence
           };
         }
-        return prev; // No cambiar el estado si no hay diferencias significativas
+
+        return prev;
       });
     } catch (error) {
       console.error('Error en la predicción:', error);
       let errorMessage = STATUS_MESSAGES.PREDICTION_ERROR;
-      
-      // Detectar errores específicos
       if (error.response?.data?.detail) {
         const detail = error.response.data.detail;
         if (detail.includes('Modelo no entrenado')) {
@@ -124,7 +125,7 @@ export const useVocalLogic = () => {
           errorMessage = `Error: ${detail}`;
         }
       }
-      
+
       setAppState(prev => ({ ...prev, isPredicting: false, statusMessage: errorMessage }));
     } finally {
       predictionInProgress.current = false;
@@ -134,7 +135,7 @@ export const useVocalLogic = () => {
   // --- Funciones auxiliares ---
   const canTrainMinimal = useCallback(() => {
     const { vowelProgress } = appState;
-    // Verificar si hay al menos 2 muestras por vocal (mínimo para entrenar)
+
     return VOWELS.every(v => (vowelProgress[v]?.count || 0) >= 2);
   }, [appState.vowelProgress]);
 
@@ -165,7 +166,7 @@ export const useVocalLogic = () => {
   }, [fetchProgress]);
 
   const trainModel = useCallback(async () => {
-    // Verificar datos mínimos antes de intentar entrenar
+
     if (!canTrainMinimal()) {
       const insufficientVowels = getInsufficientVowels();
       const message = `Faltan datos para: ${insufficientVowels.join(', ')}. Necesitas al menos 2 muestras por vocal.`;
@@ -185,8 +186,7 @@ export const useVocalLogic = () => {
     } catch (err) {
       console.error('Error durante el entrenamiento:', err);
       let errorMessage = STATUS_MESSAGES.TRAINING_ERROR;
-      
-      // Detectar errores específicos
+
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (detail.includes('Datos insuficientes')) {
@@ -195,50 +195,60 @@ export const useVocalLogic = () => {
           errorMessage = `Error: ${detail}`;
         }
       }
-      
+
       setAppState(prev => ({ ...prev, statusMessage: errorMessage }));
     } finally {
       setAppState(prev => ({ ...prev, isTraining: false }));
     }
   }, [canTrainMinimal, getInsufficientVowels]);
 
-  const resetData = useCallback(async () => {
-    if (window.confirm("¿Estás seguro de que quieres borrar todos los datos y el modelo?")) {
-      try {
-        await apiService.resetData();
-        setAppState(prev => ({
-          ...prev,
-          isModelTrained: false,
-          isPredicting: false,
-          prediction: '',
-          predictionConfidence: null,
-          trainingAccuracy: null,
-          statusMessage: STATUS_MESSAGES.RESET,
-          vowelProgress: {},
-        }));
-      } catch (error) {
-        console.error('Error al reiniciar datos:', error);
-      } finally {
-        fetchProgress();
+  // --- Reset con modal ---
+  const resetData = useCallback(() => {
+    setModalData({
+      open: true,
+      message: "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
+      onConfirm: async () => {
+        try {
+          await apiService.resetData();
+          setAppState(prev => ({
+            ...prev,
+            isModelTrained: false,
+            isPredicting: false,
+            prediction: '',
+            predictionConfidence: null,
+            trainingAccuracy: null,
+            statusMessage: STATUS_MESSAGES.RESET,
+            vowelProgress: {},
+          }));
+        } catch (error) {
+          console.error('Error al reiniciar datos:', error);
+        } finally {
+          fetchProgress();
+        }
       }
-    }
-  }, [fetchProgress]);
+    });
+  }, [fetchProgress, setModalData]);
 
-  const deleteVowelData = useCallback(async (vowel) => {
-    if (window.confirm(`¿Estás seguro de que quieres borrar todos los datos de la vocal '${vowel}'?`)) {
-      try {
-        await apiService.deleteVowelData(vowel);
-        setAppState(prev => ({
-          ...prev,
-          statusMessage: `Datos de la vocal '${vowel}' eliminados correctamente.`,
-        }));
-      } catch (error) {
-        console.error(`Error al eliminar datos de la vocal ${vowel}:`, error);
-      } finally {
-        fetchProgress();
+  // --- Delete de vocal con modal ---
+  const deleteVowelData = useCallback((vowel) => {
+    setModalData({
+      open: true,
+      message: `¿Estás seguro de que quieres borrar todos los datos de la vocal '${vowel}'?`,
+      onConfirm: async () => {
+        try {
+          await apiService.deleteVowelData(vowel);
+          setAppState(prev => ({
+            ...prev,
+            statusMessage: `Datos de la vocal '${vowel}' eliminados correctamente.`,
+          }));
+        } catch (error) {
+          console.error(`Error al eliminar datos de la vocal ${vowel}:`, error);
+        } finally {
+          fetchProgress();
+        }
       }
-    }
-  }, [fetchProgress]);
+    });
+  }, [fetchProgress, setModalData]);
 
   const togglePrediction = useCallback(() => {
     if (!appState.isModelTrained) {
@@ -266,18 +276,14 @@ export const useVocalLogic = () => {
   const getRequiredSamples = useCallback(() => {
     return VOWELS.length * SAMPLES_PER_VOWEL;
   }, []);
-  
-  // Cargar el progreso al inicio y configurar polling automático
+
+  // Cargar progreso al inicio
   useEffect(() => {
     fetchProgress();
-    
-    // Configurar polling automático cada 2 segundos
-    // Actualizar más frecuentemente cuando se está recolectando
     const interval = setInterval(() => {
       fetchProgress();
-    }, appState.isCollecting ? 1000 : 3000); // 1s si está recolectando, 3s si no
+    }, appState.isCollecting ? 1000 : 3000);
     
-    // Limpiar el interval al desmontar el componente
     return () => clearInterval(interval);
   }, [fetchProgress, appState.isCollecting]);
 
@@ -300,3 +306,4 @@ export const useVocalLogic = () => {
     SAMPLES_PER_VOWEL
   };
 };
+

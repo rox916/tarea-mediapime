@@ -39,10 +39,10 @@ const CameraSection = React.memo(({
           playsInline
         />
         <canvas 
-            ref={canvasRef} 
-            className="canvas-overlay"
-            style={{ display: isCameraReady && !error ? 'block' : 'none' }}
-          />
+          ref={canvasRef} 
+          className="canvas-overlay"
+          style={{ display: isCameraReady && !error ? 'block' : 'none' }}
+        />
       </div>
 
       {isModelTrained && isInitialized && !error && (
@@ -58,9 +58,9 @@ const CameraSection = React.memo(({
           
           {isPredicting && (
             <div className="prediction-display">
-              <h3>Predicción:</h3>
-              <div className="prediction-result">
-                {prediction || 'Muestra tu mano...'}
+              <h3>Predicción</h3>
+              <div className="prediction-letter">
+                {prediction || '...'}
               </div>
               {prediction && predictionConfidence && (
                 <div className="prediction-confidence">
@@ -75,7 +75,6 @@ const CameraSection = React.memo(({
   );
 });
 
-// Función de comparación para React.memo - evita re-renders innecesarios
 CameraSection.displayName = 'CameraSection';
 
 export default CameraSection;
