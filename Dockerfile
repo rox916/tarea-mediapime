@@ -6,10 +6,11 @@ WORKDIR /app
 
 # Copia el archivo requirements.txt y lo instala
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copia el resto del codigo de tu backend
 COPY backend/ .
 
 # Define el comando para ejecutar tu aplicacion
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]vicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
