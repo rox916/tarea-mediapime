@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copia el archivo requirements.txt y lo instala
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Copia el resto del codigo de tu backend
 COPY backend/ .
