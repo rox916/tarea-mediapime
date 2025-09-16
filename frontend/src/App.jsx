@@ -1,9 +1,12 @@
+
 import React, { useRef, useState } from 'react';
+
 import { useMediaPipe } from './hooks/useMediaPipe.js';
 import { useVocalLogic } from './hooks/useVocalLogic.js';
 import CameraSection from './components/CameraSection.jsx';
 import ControlsSection from './components/ControlsSection.jsx';
 import StatusMessage from './components/StatusMessage.jsx';
+
 import ConfirmModal from './components/ConfirmModal.jsx';
 
 function App() {
@@ -33,8 +36,8 @@ function App() {
     getRequiredSamples,
     VOWELS,
     SAMPLES_PER_VOWEL
-  } = useVocalLogic({ setModalData }); // 👈 le pasamos el setter del modal
 
+  } = useVocalLogic({ setModalData }); // 👈 le pasamos el setter del modal
   // Hook de MediaPipe
   const { isInitialized, isCameraReady, error } = useMediaPipe({
     videoRef,
@@ -52,6 +55,7 @@ function App() {
       <header className="app-header">
         <h1>Reconocimiento de Vocales por Gestos</h1>
         <p>Usa la cámara para capturar la posición de tu mano, recolectar muestras y entrenar un modelo de IA para identificar vocales.</p>
+
       </header>
 
       <main className="app-main">

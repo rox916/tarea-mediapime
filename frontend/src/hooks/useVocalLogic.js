@@ -19,6 +19,7 @@ const STATUS_MESSAGES = {
 };
 
 export const useVocalLogic = ({ setModalData }) => {
+
   const [appState, setAppState] = useState({
     isCollecting: false,
     isTraining: false,
@@ -42,6 +43,7 @@ export const useVocalLogic = ({ setModalData }) => {
         const totalProgress = (totalSamples / totalRequired) * 100;
 
         const newStatusMessage = totalProgress >= 100 ? STATUS_MESSAGES.READY_TO_TRAIN : prev.statusMessage;
+
 
         // Normalizar la estructura de datos
         const normalizedVowelProgress = {};
@@ -71,11 +73,13 @@ export const useVocalLogic = ({ setModalData }) => {
     if (!appState.isCollecting) return;
     try {
       await apiService.sendLandmarks(landmarks, vowel);
+
       await fetchProgress();
     } catch (error) {
       console.error('Error al agregar muestra:', error);
     }
   }, [appState.isCollecting, fetchProgress]);
+
 
   // Throttling para predicciones
   const lastPredictionTime = useRef(0);
@@ -107,12 +111,12 @@ export const useVocalLogic = ({ setModalData }) => {
             predictionConfidence: result.confidence
           };
         }
+
         return prev;
       });
     } catch (error) {
       console.error('Error en la predicción:', error);
       let errorMessage = STATUS_MESSAGES.PREDICTION_ERROR;
-
       if (error.response?.data?.detail) {
         const detail = error.response.data.detail;
         if (detail.includes('Modelo no entrenado')) {
@@ -131,6 +135,7 @@ export const useVocalLogic = ({ setModalData }) => {
   // --- Funciones auxiliares ---
   const canTrainMinimal = useCallback(() => {
     const { vowelProgress } = appState;
+
     return VOWELS.every(v => (vowelProgress[v]?.count || 0) >= 2);
   }, [appState.vowelProgress]);
 
@@ -161,6 +166,7 @@ export const useVocalLogic = ({ setModalData }) => {
   }, [fetchProgress]);
 
   const trainModel = useCallback(async () => {
+
     if (!canTrainMinimal()) {
       const insufficientVowels = getInsufficientVowels();
       const message = `Faltan datos para: ${insufficientVowels.join(', ')}. Necesitas al menos 2 muestras por vocal.`;
@@ -277,6 +283,7 @@ export const useVocalLogic = ({ setModalData }) => {
     const interval = setInterval(() => {
       fetchProgress();
     }, appState.isCollecting ? 1000 : 3000);
+    
     return () => clearInterval(interval);
   }, [fetchProgress, appState.isCollecting]);
 
@@ -299,3 +306,4 @@ export const useVocalLogic = ({ setModalData }) => {
     SAMPLES_PER_VOWEL
   };
 };
+
