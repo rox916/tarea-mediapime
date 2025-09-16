@@ -8,11 +8,11 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  animation: fadeIn 0.4s ease, slideIn 0.4s ease;
+  /* Animaciones removidas para mejor rendimiento */
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* Animaciones */
+/* Animaciones removidas - causaban problemas de rendimiento
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -22,6 +22,7 @@
   from { transform: translateY(-6px); }
   to { transform: translateY(0); }
 }
+*/
 
 /* Variantes */
 .status-message.success {

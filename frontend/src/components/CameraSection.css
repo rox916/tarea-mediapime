@@ -80,13 +80,15 @@
   margin: 0.3rem 0;
   color: #06d6a0;
   text-shadow: 1px 1px 6px rgba(0,0,0,0.4);
-  animation: pop 0.3s ease;
+  /* Animación 'pop' removida - causaba problemas de rendimiento al ejecutarse constantemente */
 }
 
+/* Animación removida - se ejecutaba en cada predicción causando lag
 @keyframes pop {
   from { transform: scale(0.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+*/
 
 /* Confianza */
 .prediction-confidence {

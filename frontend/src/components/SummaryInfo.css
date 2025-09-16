@@ -24,11 +24,12 @@
   padding: 1rem;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  transition: opacity 0.15s ease, box-shadow 0.2s ease; /* Optimizado: transform removido */
 }
 
 .stat-item:hover {
-  transform: translateY(-2px);
+  /* transform removido - causaba reflows costosos */
+  opacity: 0.9;
   box-shadow: 0 6px 14px rgba(0,0,0,0.3);
 }
 

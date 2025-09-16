@@ -14,7 +14,7 @@
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.15s ease, opacity 0.15s ease; /* Optimizado: solo propiedades que no causan reflow */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -23,13 +23,15 @@
   min-width: 160px;
 }
 
-/* Hover + Active effects */
+/* Hover + Active effects - Optimizados para mejor rendimiento */
 .action-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+  /* transform removido - causaba reflows costosos */
+  opacity: 0.9;
   box-shadow: 0 6px 16px rgba(0,0,0,0.25);
 }
 .action-btn:active {
-  transform: scale(0.97);
+  /* transform scale removido - causaba reflows */
+  opacity: 0.8;
 }
 .action-btn:disabled {
   opacity: 0.6;

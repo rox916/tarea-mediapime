@@ -12,11 +12,12 @@
   border-radius: 10px;
   padding: 0.8rem 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  transition: opacity 0.15s ease, box-shadow 0.2s ease; /* Optimizado: transform removido */
 }
 
 .vowel-item:hover {
-  transform: translateY(-2px);
+  /* transform removido - causaba reflows costosos */
+  opacity: 0.95;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
@@ -64,7 +65,7 @@
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, opacity 0.15s ease; /* Optimizado: solo propiedades que no causan reflow */
   color: #fff;
 }
 
@@ -105,7 +106,7 @@
   background: rgba(255, 255, 255, 0.12);
   color: #eee;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.15s ease, opacity 0.15s ease; /* Optimizado: solo propiedades que no causan reflow */
 }
 
 .delete-btn:hover:not(:disabled) {
