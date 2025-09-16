@@ -1,5 +1,6 @@
 import React from 'react';
 import './VowelControls.css';
+import ActionButtons from './ActionButtons';
 
 const VOWELS = ['A', 'E', 'I', 'O', 'U'];
 const SAMPLES_PER_VOWEL = 100;
@@ -10,7 +11,12 @@ const VowelControls = ({
   currentVowel, 
   startCollecting, 
   stopCollecting,
-  deleteVowelData 
+  deleteVowelData,
+  // props para ActionButtons
+  canTrain,       // ✅ viene como función desde useVocalLogic
+  isTraining,
+  trainModel,
+  resetData
 }) => {
   return (
     <div className="vowel-controls">
@@ -39,23 +45,28 @@ const VowelControls = ({
             </div>
             
             <button
-              className={`collect-btn ${isCurrentlyCollecting ? 'active' : ''}`}
-              onClick={() => isCurrentlyCollecting ? stopCollecting() : startCollecting(vowel)}
-              disabled={isComplete && !isCurrentlyCollecting}
+              className={`collect-btn 
+                ${isCurrentlyCollecting ? 'active' : ''} 
+                ${isComplete ? 'complete' : ''}`}
+              onClick={() => {
+                if (!isComplete) {
+                  isCurrentlyCollecting ? stopCollecting() : startCollecting(vowel);
+                }
+              }}
+              disabled={isComplete}
             >
-              {isCurrentlyCollecting 
-                ? `Detener Recolección '${vowel}'` 
-                : isComplete 
-                  ? `Vocal '${vowel}' Completa` 
-                  : `Recolectar '${vowel}' (${count}/${SAMPLES_PER_VOWEL})`
-              }
+              {isComplete
+                ? `Vocal '${vowel}' Completa`
+                : isCurrentlyCollecting
+                  ? `Detener Recolección '${vowel}'`
+                  : `Recolectar '${vowel}' (${count}/${SAMPLES_PER_VOWEL})`}
             </button>
             
             {count > 0 && (
               <button
                 className="delete-btn"
                 onClick={() => deleteVowelData(vowel)}
-                disabled={isCurrentlyCollecting}
+                disabled={isCurrentlyCollecting && !isComplete}  
                 title={`Eliminar datos de la vocal '${vowel}'`}
               >
                 🗑️ Eliminar '{vowel}'
@@ -64,6 +75,18 @@ const VowelControls = ({
           </div>
         );
       })}
+
+      {/* 👇 Tarjeta de botones dentro del mismo grid */}
+      <div className="vowel-item action-buttons-wrapper">
+        <ActionButtons
+          isCollecting={isCollecting}
+          canTrain={canTrain()}  
+          isTraining={isTraining}
+          stopCollecting={stopCollecting}
+          trainModel={trainModel}
+          resetData={resetData}
+        />
+      </div>
     </div>
   );
 };

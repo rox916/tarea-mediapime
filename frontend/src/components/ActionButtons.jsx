@@ -9,18 +9,15 @@ const ActionButtons = ({
   trainModel, 
   resetData 
 }) => {
+  // ✅ Nos aseguramos de que canTrain sea siempre una función
+  const canTrainFn = typeof canTrain === 'function' ? canTrain : () => false;
+
   return (
     <div className="action-buttons">
-      {isCollecting && (
-        <button className="action-btn stop-btn" onClick={stopCollecting}>
-          🛑 Detener Recolección
-        </button>
-      )}
-      
       <button
         className="action-btn train-btn"
         onClick={trainModel}
-        disabled={!canTrain() || isTraining}
+        disabled={!canTrain || isTraining}
       >
         {isTraining ? (
           <>

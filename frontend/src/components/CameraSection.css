@@ -1,8 +1,15 @@
+/* Contenedor principal de la tarjeta de cámara */
+.camera-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* ✅ se estira igual que left-box y controls-section */
+}
+
+/* Contenedor de la cámara (mantiene tamaño fijo) */
 .camera-container {
   position: relative;
   width: 100%;
-  max-width: 640px;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9; /* ✅ mantiene el tamaño de la cámara */
   margin: 0 auto;
   border-radius: 10px;
   overflow: hidden;
@@ -27,13 +34,16 @@
 
 /* --- PREDICCIÓN --- */
 
-/* Botón centrado */
-.prediction-controls {
+/* Fila de botón + predicción */
+.prediction-row {
+  margin-top: 15px;
   display: flex;
-  justify-content: center;
-  margin-top: 10px;
+  justify-content: flex-start; /* 🔹 alineado a la izquierda */
+  align-items: center;
+  gap: 1rem; /* espacio entre botón y cuadro */
 }
 
+/* Botón */
 .prediction-toggle {
   padding: 0.6rem 1rem;
   border-radius: 8px;
@@ -53,20 +63,19 @@
   color: #fff;
 }
 
-/* Cuadro de predicción más compacto */
+/* Cuadro de predicción */
 .prediction-display {
-  margin: 15px auto 0 auto;
   padding: 0.8rem;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   text-align: center;
-  width: 200px; /* 👈 compacto */
+  width: 200px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
 /* Letra predicha */
 .prediction-letter {
-  font-size: 3rem; /* reducido */
+  font-size: 3rem;
   font-weight: 800;
   margin: 0.3rem 0;
   color: #06d6a0;

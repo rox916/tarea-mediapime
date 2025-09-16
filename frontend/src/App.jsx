@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 
 import { useMediaPipe } from './hooks/useMediaPipe.js';
@@ -6,8 +5,8 @@ import { useVocalLogic } from './hooks/useVocalLogic.js';
 import CameraSection from './components/CameraSection.jsx';
 import ControlsSection from './components/ControlsSection.jsx';
 import StatusMessage from './components/StatusMessage.jsx';
-
 import ConfirmModal from './components/ConfirmModal.jsx';
+import LeftBox from './components/LeftBox.jsx'; // 👈 nuevo componente
 
 function App() {
   const videoRef = useRef(null);
@@ -36,8 +35,8 @@ function App() {
     getRequiredSamples,
     VOWELS,
     SAMPLES_PER_VOWEL
+  } = useVocalLogic({ setModalData });
 
-  } = useVocalLogic({ setModalData }); // 👈 le pasamos el setter del modal
   // Hook de MediaPipe
   const { isInitialized, isCameraReady, error } = useMediaPipe({
     videoRef,
@@ -54,11 +53,17 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <h1>Reconocimiento de Vocales por Gestos</h1>
-        <p>Usa la cámara para capturar la posición de tu mano, recolectar muestras y entrenar un modelo de IA para identificar vocales.</p>
-
+        <p>
+          Usa la cámara para capturar la posición de tu mano, recolectar muestras
+          y entrenar un modelo de IA para identificar vocales.
+        </p>
       </header>
 
       <main className="app-main">
+        {/* Cuadro largo a la izquierda */}
+        <LeftBox />
+
+        {/* Contenido principal */}
         <div className="main-content">
           <CameraSection
             videoRef={videoRef}
@@ -106,7 +111,9 @@ function App() {
           modalData.onConfirm?.();
           setModalData({ open: false, message: "", onConfirm: null });
         }}
-        onCancel={() => setModalData({ open: false, message: "", onConfirm: null })}
+        onCancel={() =>
+          setModalData({ open: false, message: "", onConfirm: null })
+        }
       />
     </div>
   );

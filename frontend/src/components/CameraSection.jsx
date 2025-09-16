@@ -45,19 +45,20 @@ const CameraSection = React.memo(({
         />
       </div>
 
-      {isModelTrained && isInitialized && !error && (
-        <div className="prediction-section">
-          <div className="prediction-controls">
-            <button 
-              onClick={togglePrediction}
-              className={`prediction-toggle ${isPredicting ? 'active' : ''}`}
-            >
-              {isPredicting ? '⏸️ Pausar Predicción' : '▶️ Iniciar Predicción'}
-            </button>
-          </div>
-          
-          {isPredicting && (
-            <div className="prediction-display">
+      {/* ✅ Botón + etiqueta de predicción en una fila */}
+      <div className="prediction-row">
+        {isModelTrained && isInitialized && !error && (
+          <button 
+            onClick={togglePrediction}
+            className={`prediction-toggle ${isPredicting ? 'active' : ''}`}
+          >
+            {isPredicting ? '⏸️ Pausar Predicción' : '▶️ Iniciar Predicción'}
+          </button>
+        )}
+
+        <div className="prediction-display">
+          {isPredicting ? (
+            <>
               <h3>Predicción</h3>
               <div className="prediction-letter">
                 {prediction || '...'}
@@ -67,10 +68,12 @@ const CameraSection = React.memo(({
                   Confianza: {(predictionConfidence * 100).toFixed(1)}%
                 </div>
               )}
-            </div>
+            </>
+          ) : (
+            <p>Predicción inactiva</p>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 });

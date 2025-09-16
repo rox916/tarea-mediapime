@@ -1,7 +1,6 @@
 import React from 'react';
 import VowelControls from './VowelControls';
 import SummaryInfo from './SummaryInfo';
-import ActionButtons from './ActionButtons';
 import StatusMessage from './StatusMessage';
 
 const ControlsSection = ({ 
@@ -29,7 +28,7 @@ const ControlsSection = ({
         getRequiredSamples={getRequiredSamples}
       />
 
-      {/* Controles por cada vocal */}
+      {/* ✅ Grid de vocales + botones (todo manejado dentro de VowelControls) */}
       <VowelControls
         progress={progress}
         isCollecting={isCollecting}
@@ -37,14 +36,8 @@ const ControlsSection = ({
         startCollecting={startCollecting}
         stopCollecting={stopCollecting}
         deleteVowelData={deleteVowelData}
-      />
-
-      {/* Botones de acción */}
-      <ActionButtons
-        isCollecting={isCollecting}
         canTrain={canTrain}
         isTraining={isTraining}
-        stopCollecting={stopCollecting}
         trainModel={trainModel}
         resetData={resetData}
       />
