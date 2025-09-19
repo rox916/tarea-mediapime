@@ -1,10 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import router
+from routes.routes_generales import router as router_general
+from routes.vocales.routes_vocales import router as router_vocales
+from routes.numeros.routes_numeros import router as router_numeros
+from routes.operaciones.routes_operaciones import router as router_operaciones
 from utils import crear_directorios
 
 # Crear la aplicación FastAPI
-app = FastAPI(title="API de Reconocimiento de Vocales", version="1.0.0")
+app = FastAPI(
+    title="MediaPipe API Collection", 
+    version="1.0.0",
+    description="API para recolección de datos y entrenamiento de modelos con MediaPipe"
+)
 
 # Configurar CORS para permitir peticiones desde cualquier origen
 app.add_middleware(
@@ -18,8 +25,11 @@ app.add_middleware(
 # Crear directorios necesarios
 crear_directorios()
 
-# Incluir las rutas
-app.include_router(router)
+# Incluir las rutas organizadas por funcionalidad
+app.include_router(router_general)      # Rutas generales: /api/...
+app.include_router(router_vocales)      # Rutas de vocales: /api/vocales/...
+app.include_router(router_numeros)      # Rutas de números: /api/numeros/...
+app.include_router(router_operaciones)  # Rutas de operaciones: /api/operaciones/...
 
 
 
