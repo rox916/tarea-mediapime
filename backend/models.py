@@ -6,202 +6,301 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow import keras
 import joblib
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Optional
+import time
 
-# Configuración
-VOCALES = ["A", "E", "I", "O", "U"]
-MAX_MUESTRAS = 100
-DIR_DATOS = "data_storage"
-DIR_MODELOS = "models"
+from config import (
+    obtener_ruta_datos, obtener_ruta_modelo, obtener_ruta_encoder, 
+    DATOS_CONFIG, validar_clase, CLASE_A_CATEGORIA
+)
+from utils import validar_puntos_clave
 
-# Variables globales para el modelo y cache
-modelo_actual = None
-codificador_actual = None
-modelo_cache = None
-codificador_cache = None
-ultima_carga_modelo = 0
+# Cache global para modelos entrenados
+cache_modelos = {}
+cache_codificadores = {}
 
-def obtener_ruta_archivo(vocal: str) -> str:
-    """Devuelve la ruta del archivo de datos para una vocal específica."""
-    return os.path.join(DIR_DATOS, f"{vocal.lower()}_samples.json")
-
-def cargar_datos_existentes() -> dict:
-    """Carga todos los datos de muestra guardados en el disco."""
-    datos_cargados = {vocal: [] for vocal in VOCALES}
-    for vocal in VOCALES:
-        ruta_archivo = obtener_ruta_archivo(vocal)
-        if os.path.exists(ruta_archivo):
-            with open(ruta_archivo, 'r') as f:
-                datos_cargados[vocal] = json.load(f)
-    return datos_cargados
-
-def preparar_datos_entrenamiento() -> Tuple[np.ndarray, np.ndarray]:
-    """Prepara los datos recolectados para ser usados en el entrenamiento del modelo."""
-    datos = cargar_datos_existentes()
+class ModeloClase:
+    """Clase para manejar el entrenamiento y predicción de modelos por clase individual."""
     
-    X = []  # Características (puntos clave aplanados)
-    y = []  # Etiquetas (vocales)
+    def __init__(self, clase: str):
+        self.clase = clase
+        self.categoria = CLASE_A_CATEGORIA[clase]
+        self.modelo = None
+        self.codificador = None
+        self.ultima_carga = 0
+        
+    def cargar_modelo_entrenado(self) -> bool:
+        """Carga un modelo previamente entrenado desde disco."""
+        ruta_modelo = obtener_ruta_modelo(self.clase)
+        ruta_codificador = obtener_ruta_encoder(self.clase)
+        
+        if not (os.path.exists(ruta_modelo) and os.path.exists(ruta_codificador)):
+            return False
+        
+        try:
+            # Cargar modelo
+            self.modelo = keras.models.load_model(ruta_modelo)
+            
+            # Cargar codificador
+            self.codificador = joblib.load(ruta_codificador)
+            
+            # Actualizar timestamp de carga
+            self.ultima_carga = time.time()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error cargando modelo para clase {self.clase}: {e}")
+            return False
     
-    for vocal in VOCALES:
-        muestras = datos[vocal]
-        for muestra in muestras:
-            # Aplanar los puntos clave (21 puntos * 3 coordenadas = 63 características)
-            puntos_clave_aplanados = np.array(muestra["landmarks"]).flatten()
-            X.append(puntos_clave_aplanados)
-            y.append(vocal)
+    def cargar_datos_entrenamiento(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Carga y prepara los datos de entrenamiento para una clase específica."""
+        ruta_datos = obtener_ruta_datos(self.clase)
+        
+        if not os.path.exists(ruta_datos):
+            raise FileNotFoundError(f"No se encontraron datos para la clase {self.clase}")
+        
+        with open(ruta_datos, 'r') as f:
+            datos = json.load(f)
+        
+        if len(datos) < DATOS_CONFIG['samples_minimos']:
+            raise ValueError(f"Datos insuficientes para clase {self.clase}. "
+                           f"Mínimo: {DATOS_CONFIG['samples_minimos']}, "
+                           f"Actual: {len(datos)}")
+        
+        # Extraer características (landmarks) y etiquetas
+        X = []
+        y = []
+        
+        for muestra in datos:
+            if 'landmarks' in muestra:
+                # Aplanar los landmarks (21 puntos x 3 coordenadas = 63 características)
+                landmarks_flat = np.array(muestra['landmarks']).flatten()
+                X.append(landmarks_flat)
+                y.append(self.clase)  # Todas las muestras tienen la misma etiqueta
+        
+        X = np.array(X)
+        y = np.array(y)
+        
+        return X, y
     
-    return np.array(X), np.array(y)
-
-def crear_modelo() -> keras.Sequential:
-    """Crea y devuelve un modelo de red neuronal para clasificación de vocales."""
-    modelo = keras.Sequential([
-        keras.layers.Dense(128, activation='relu', input_shape=(63,)),
-        keras.layers.Dropout(0.3),
-        keras.layers.Dense(64, activation='relu'),
-        keras.layers.Dropout(0.3),
-        keras.layers.Dense(32, activation='relu'),
-        keras.layers.Dense(len(VOCALES), activation='softmax')
-    ])
-    
-    modelo.compile(
-        optimizer='adam',
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    return modelo
-
-def entrenar_modelo() -> dict:
-    """Entrena el modelo de clasificación con los datos recolectados."""
-    X, y = preparar_datos_entrenamiento()
-    
-    if len(X) == 0:
-        raise ValueError("No hay datos para entrenar")
-    
-    # Codificar etiquetas de las vocales a números
-    codificador_etiquetas = LabelEncoder()
-    y_codificada = codificador_etiquetas.fit_transform(y)
-    
-    # Dividir datos en conjuntos de entrenamiento y prueba
-    # Si hay pocas muestras, ajustar test_size y no usar stratify
-    if len(X) < 20:
-        # Para pocas muestras, usar test_size=1 muestra por clase como mínimo
-        test_size = max(len(VOCALES), int(len(X) * 0.2))
-        test_size = min(test_size, len(X) - len(VOCALES))  # Asegurar que queden muestras para entrenamiento
-        X_entrenamiento, X_prueba, y_entrenamiento, y_prueba = train_test_split(
-            X, y_codificada, test_size=test_size, random_state=42
+    def crear_modelo(self, num_caracteristicas: int) -> keras.Sequential:
+        """Crea un modelo de red neuronal para clasificación binaria."""
+        modelo = keras.Sequential([
+            keras.layers.Dense(128, activation='relu', input_shape=(num_caracteristicas,)),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(64, activation='relu'),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(32, activation='relu'),
+            keras.layers.Dense(1, activation='sigmoid')  # Clasificación binaria
+        ])
+        
+        modelo.compile(
+            optimizer='adam',
+            loss='binary_crossentropy',
+            metrics=['accuracy']
         )
-    else:
-        X_entrenamiento, X_prueba, y_entrenamiento, y_prueba = train_test_split(
-            X, y_codificada, test_size=0.2, random_state=42, stratify=y_codificada
-        )
+        
+        return modelo
     
-    # Crear y entrenar modelo
-    modelo = crear_modelo()
+    def entrenar(self) -> Dict:
+        """Entrena el modelo para la clase específica."""
+        try:
+            # Cargar datos
+            X, y = self.cargar_datos_entrenamiento()
+            
+            # Para clasificación binaria, convertir etiquetas a 0/1
+            # 1 = es la clase objetivo, 0 = no es la clase objetivo
+            y_binario = np.ones(len(y))  # Todas las muestras son de la clase objetivo
+            
+            # Dividir datos en entrenamiento y validación
+            X_train, X_val, y_train, y_val = train_test_split(
+                X, y_binario, test_size=0.2, random_state=42
+            )
+            
+            # Crear y entrenar modelo
+            self.modelo = self.crear_modelo(X.shape[1])
+            
+            # Entrenar modelo
+            history = self.modelo.fit(
+                X_train, y_train,
+                epochs=50,
+                batch_size=32,
+                validation_data=(X_val, y_val),
+                verbose=0
+            )
+            
+            # Evaluar modelo
+            val_loss, val_accuracy = self.modelo.evaluate(X_val, y_val, verbose=0)
+            
+            # Guardar modelo y codificador
+            self.guardar_modelo()
+            
+            return {
+                "exito": True,
+                "clase": self.clase,
+                "categoria": self.categoria,
+                "muestras_entrenamiento": len(X_train),
+                "muestras_validacion": len(X_val),
+                "precision_validacion": float(val_accuracy),
+                "perdida_validacion": float(val_loss),
+                "epocas": 50
+            }
+            
+        except Exception as e:
+            return {
+                "exito": False,
+                "error": str(e),
+                "clase": self.clase
+            }
     
-    historial = modelo.fit(
-        X_entrenamiento, y_entrenamiento,
-        epochs=50,
-        batch_size=32,
-        validation_data=(X_prueba, y_prueba),
-        verbose=0
-    )
+    def guardar_modelo(self):
+        """Guarda el modelo y codificador entrenados."""
+        # Crear directorio si no existe
+        os.makedirs(os.path.dirname(obtener_ruta_modelo(self.clase)), exist_ok=True)
+        
+        # Guardar modelo
+        self.modelo.save(obtener_ruta_modelo(self.clase))
+        
+        # Crear y guardar codificador simple para la clase
+        self.codificador = LabelEncoder()
+        self.codificador.fit([self.clase])  # Solo una clase
+        joblib.dump(self.codificador, obtener_ruta_encoder(self.clase))
     
-    # Evaluar modelo
-    perdida_prueba, precision_prueba = modelo.evaluate(X_prueba, y_prueba, verbose=0)
-    
-    # Guardar modelo y codificador
-    ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
-    ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
-    
-    modelo.save(ruta_modelo)
-    joblib.dump(codificador_etiquetas, ruta_codificador)
-    
-    return {
-        "precision": float(precision_prueba),
-        "perdida": float(perdida_prueba),
-        "muestras_usadas": len(X),
-        "modelo_guardado_en": ruta_modelo
-    }
+    def predecir(self, puntos_clave: List[List[float]]) -> Dict:
+        """Realiza predicción para los puntos clave dados."""
+        try:
+            # Validar puntos clave
+            if not validar_puntos_clave(puntos_clave):
+                return {
+                    "exito": False,
+                    "error": "Puntos clave inválidos"
+                }
+            
+            # Cargar modelo si no está cargado
+            if self.modelo is None:
+                if not self.cargar_modelo_entrenado():
+                    return {
+                        "exito": False,
+                        "error": f"No hay modelo entrenado para la clase {self.clase}"
+                    }
+            
+            # Preparar datos para predicción
+            landmarks_flat = np.array(puntos_clave).flatten().reshape(1, -1)
+            
+            # Realizar predicción
+            prediccion = self.modelo.predict(landmarks_flat, verbose=0)[0][0]
+            confianza = float(prediccion)
+            
+            # Determinar si es la clase objetivo (umbral 0.5)
+            es_clase_objetivo = confianza > 0.5
+            
+            return {
+                "exito": True,
+                "clase_predicha": self.clase if es_clase_objetivo else "no_" + self.clase,
+                "confianza": confianza,
+                "es_clase_objetivo": es_clase_objetivo,
+                "umbral": 0.5
+            }
+            
+        except Exception as e:
+            return {
+                "exito": False,
+                "error": str(e)
+            }
 
-def cargar_modelo_entrenado() -> Tuple[keras.Model, LabelEncoder]:
-    """Carga el modelo entrenado y el codificador de etiquetas con cache."""
-    global modelo_cache, codificador_cache, ultima_carga_modelo
-    import time
-    
-    ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
-    ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
-    
-    if not os.path.exists(ruta_modelo) or not os.path.exists(ruta_codificador):
-        raise FileNotFoundError("Modelo no entrenado. Por favor, entrena el modelo primero.")
-    
-    # Verificar si necesitamos recargar el modelo
-    tiempo_actual = time.time()
-    modelo_modificado = os.path.getmtime(ruta_modelo)
-    
-    # Usar cache si el modelo no ha cambiado y fue cargado recientemente
-    if (modelo_cache is not None and codificador_cache is not None and 
-        modelo_modificado <= ultima_carga_modelo):
-        return modelo_cache, codificador_cache
-    
-    # Cargar modelo desde disco
-    print("🔄 Cargando modelo desde disco...")
-    modelo = keras.models.load_model(ruta_modelo)
-    codificador_etiquetas = joblib.load(ruta_codificador)
-    
-    # Actualizar cache
-    modelo_cache = modelo
-    codificador_cache = codificador_etiquetas
-    ultima_carga_modelo = tiempo_actual
-    
-    print("✅ Modelo cargado en cache")
-    return modelo, codificador_etiquetas
+# --- Funciones de utilidad ---
 
-def predecir_vocal(puntos_clave: List[List[float]]) -> dict:
-    """Predice la vocal basada en los puntos clave proporcionados."""
-    import time
-    start_time = time.time()
-    
-    if len(puntos_clave) != 21 or any(len(punto) != 3 for punto in puntos_clave):
-        raise ValueError("Puntos clave inválidos")
-    
-    # Cargar modelo y codificador (optimización: cache en memoria)
-    modelo, codificador_etiquetas = cargar_modelo_entrenado()
-    
-    # Preparar datos para la predicción
-    puntos_clave_aplanados = np.array(puntos_clave, dtype=np.float32).flatten().reshape(1, -1)
-    
-    # Predecir la clase
-    predicciones = modelo.predict(puntos_clave_aplanados, verbose=0)
-    clase_predicha = np.argmax(predicciones[0])
-    confianza = float(predicciones[0][clase_predicha])
-    
-    # Decodificar la etiqueta numérica a la vocal
-    vocal_predicha = codificador_etiquetas.inverse_transform([clase_predicha])[0]
-    
-    # Obtener probabilidades para todas las clases
-    probabilidades = {
-        vocal: float(predicciones[0][i]) 
-        for i, vocal in enumerate(codificador_etiquetas.classes_)
-    }
-    
-    # Log del tiempo de procesamiento
-    processing_time = time.time() - start_time
-    if processing_time > 0.1:  # Log solo si toma más de 100ms
-        print(f"⚠️ Predicción lenta: {processing_time:.3f}s")
-    
-    return {
-        "prediccion": vocal_predicha,
-        "confianza": confianza,
-        "todas_las_probabilidades": probabilidades
-    }
+def obtener_modelo_clase(clase: str) -> ModeloClase:
+    """Obtiene una instancia del modelo para una clase específica."""
+    if clase not in cache_modelos:
+        cache_modelos[clase] = ModeloClase(clase)
+    return cache_modelos[clase]
 
-def eliminar_modelo():
-    """Elimina el modelo entrenado y el codificador de etiquetas."""
-    ruta_modelo = os.path.join(DIR_MODELOS, "modelo_vocales.h5")
-    ruta_codificador = os.path.join(DIR_MODELOS, "codificador_etiquetas.pkl")
+async def entrenar_modelo_clase(clase: str) -> Dict:
+    """Entrena un modelo para una clase específica."""
+    if not validar_clase(clase):
+        raise ValueError(f"Clase '{clase}' no válida")
     
-    if os.path.exists(ruta_modelo):
-        os.remove(ruta_modelo)
-    if os.path.exists(ruta_codificador):
-        os.remove(ruta_codificador)
+    modelo = obtener_modelo_clase(clase)
+    return modelo.entrenar()
+
+async def predecir_clase(clase: str, puntos_clave: List[List[float]]) -> Dict:
+    """Realiza predicción para una clase específica."""
+    if not validar_clase(clase):
+        raise ValueError(f"Clase '{clase}' no válida")
+    
+    modelo = obtener_modelo_clase(clase)
+    return modelo.predecir(puntos_clave)
+
+async def eliminar_modelo_clase(clase: str) -> Dict:
+    """Elimina el modelo entrenado de una clase específica."""
+    try:
+        ruta_modelo = obtener_ruta_modelo(clase)
+        ruta_encoder = obtener_ruta_encoder(clase)
+        
+        archivos_eliminados = []
+        
+        if os.path.exists(ruta_modelo):
+            os.remove(ruta_modelo)
+            archivos_eliminados.append("modelo")
+        
+        if os.path.exists(ruta_encoder):
+            os.remove(ruta_encoder)
+            archivos_eliminados.append("encoder")
+        
+        # Limpiar cache
+        if clase in cache_modelos:
+            del cache_modelos[clase]
+        
+        return {
+            "exito": True,
+            "archivos_eliminados": archivos_eliminados,
+            "clase": clase
+        }
+        
+    except Exception as e:
+        return {
+            "exito": False,
+            "error": str(e),
+            "clase": clase
+        }
+
+def obtener_info_modelo_clase(clase: str) -> Dict:
+    """Obtiene información sobre el modelo de una clase específica."""
+    if not validar_clase(clase):
+        return {
+            "existe": False,
+            "error": f"Clase '{clase}' no válida"
+        }
+    
+    ruta_modelo = obtener_ruta_modelo(clase)
+    ruta_encoder = obtener_ruta_encoder(clase)
+    
+    if not os.path.exists(ruta_modelo):
+        return {
+            "existe": False,
+            "clase": clase,
+            "categoria": CLASE_A_CATEGORIA[clase]
+        }
+    
+    try:
+        # Obtener información del archivo
+        stat_modelo = os.stat(ruta_modelo)
+        
+        return {
+            "existe": True,
+            "clase": clase,
+            "categoria": CLASE_A_CATEGORIA[clase],
+            "tamaño_archivo": stat_modelo.st_size,
+            "fecha_creacion": stat_modelo.st_ctime,
+            "fecha_modificacion": stat_modelo.st_mtime,
+            "tiene_encoder": os.path.exists(ruta_encoder)
+        }
+        
+    except Exception as e:
+        return {
+            "existe": False,
+            "error": str(e),
+            "clase": clase
+        }
