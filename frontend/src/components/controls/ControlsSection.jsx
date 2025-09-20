@@ -1,7 +1,7 @@
 import React from 'react';
 import VowelControls from './VowelControls';
-import SummaryInfo from './SummaryInfo';
-import StatusMessage from './StatusMessage';
+import SummaryInfo from "../feedback/SummaryInfo.jsx";
+import StatusMessage from "../feedback/StatusMessage.jsx";
 
 const ControlsSection = ({ 
   progress,
@@ -43,7 +43,7 @@ const ControlsSection = ({
       />
 
       {/* Mensajes de estado */}
-      <StatusMessage statusMessage={statusMessage} />
+      <StatusMessage message={statusMessage} />
     </div>
   );
 };

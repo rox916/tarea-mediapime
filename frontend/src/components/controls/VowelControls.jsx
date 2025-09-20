@@ -1,6 +1,6 @@
 import React from 'react';
 import './VowelControls.css';
-import ActionButtons from './ActionButtons';
+import ActionButtons from "../common/ActionButtons.jsx";
 
 const VOWELS = ['A', 'E', 'I', 'O', 'U'];
 const SAMPLES_PER_VOWEL = 100;
