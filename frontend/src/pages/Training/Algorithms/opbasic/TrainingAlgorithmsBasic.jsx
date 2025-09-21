@@ -1,22 +1,27 @@
-export default function TrainingAlgorithmsBasic() {
+import { Link } from "react-router-dom"; // ← Importa Link
 
-  const opbasic = ["mas", "menos", "division", "multipl"];
+export default function TrainingAlgorithmsBasic() {
+  const opbasic = [
+    { name: "Multiplicación", key: "multipl", icon: "✖️" },
+    { name: "División", key: "division", icon: "➗" },
+    { name: "Resta", key: "menos", icon: "➖" },
+    { name: "Suma", key: "mas", icon: "➕" },
+  ];
 
   return (
     <div style={{ textAlign: "center", padding: "2rem" }}>
       <h1>➗ Operaciones Básicas</h1>
       <p>Aquí podrás entrenar modelos para:</p>
       <ul style={{ listStyle: "none", padding: 0 }}>
-        <li>✖️ Multiplicación</li>
-        <li>➗ División</li>
-        <li>➖ Resta</li>
-        <li>➕ Suma</li>
+        {opbasic.map((op) => (
+          <li key={op.key}>{op.icon} {op.name}</li>
+        ))}
       </ul>
       <div style={{ marginTop: "2rem" }}>
-        {opbasic.map((v) => (
+        {opbasic.map((op) => (
           <Link
-            key={v}
-            to={`/training/algorithms/opbasic/${v.toLowerCase()}`}
+            key={op.key}
+            to={`/training/algorithms/opbasic/${op.key}`}
             style={{ textDecoration: "none" }}
           >
             <button
@@ -26,7 +31,7 @@ export default function TrainingAlgorithmsBasic() {
                 fontSize: "1.2rem",
               }}
             >
-              {v}
+              {op.name}
             </button>
           </Link>
         ))}

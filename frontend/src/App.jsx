@@ -26,10 +26,10 @@ import TrainingAlgorithmsNumber9 from "./pages/Training/Algorithms/numbers/Train
 import TrainingAlgorithmsNumber0 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx";
 
 // Training - operaciones individuales
-import TrainingAlgorithmsBasicMas from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx";
-import TrainingAlgorithmsBasicMenos from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx";
-import TrainingAlgorithmsBasicMultipl from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx";
-import TrainingAlgorithmsBasicDivision from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicDivision.jsx";
+import TrainingAlgorithmsBasicmas from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx";
+import TrainingAlgorithmsBasicmenos from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx";
+import TrainingAlgorithmsBasicmultipl from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx";
+import TrainingAlgorithmsBasicdivision from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicDivision.jsx";
 
 // Training - Vocales individuales
 import TrainingWordVowelA from "./pages/Training/Words/Vowels/TrainingWordVowelA.jsx";
