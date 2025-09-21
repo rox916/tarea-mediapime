@@ -1,6 +1,6 @@
 import SingleopbasicControls from "../../../components/controls/SingleopbasicControls.jsx";
 
-export default function TrainingAlgorithmsBasicmas(props) {
+export default function TrainingAlgorithmsBasicmenos(props) {
   return (
     <SingleopbasicControls
       opbasic="menos"
