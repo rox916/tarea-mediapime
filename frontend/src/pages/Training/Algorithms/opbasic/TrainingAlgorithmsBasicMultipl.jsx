@@ -1,8 +1,8 @@
-import SingleopbasicControls from "../../../components/controls/SingleopbasicControls.jsx";
+import SingleOpbasicControls from "../../../components/controls/SingleOpbasicControls.jsx";
 
 export default function TrainingAlgorithmsBasicmultipl(props) {
   return (
-    <SingleopbasicControls
+    <SingleOpbasicControls
       opbasic="multipl"
       {...props}
     />

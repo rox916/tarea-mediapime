@@ -1,0 +1,30 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "Leo",
+    "back-franch",
+    "back-roxy",
+    "front-luis",
+    "luis2",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "Leo": "main",
+    "back-franch": "main",
+    "back-roxy": "main",
+    "front-luis": "main",
+    "luis2": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "Leo",
+    "back-franch",
+    "back-roxy",
+    "front-luis",
+    "luis2",
+    "origin"
+  ]
+}
