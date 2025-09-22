@@ -42,6 +42,7 @@ import TrainingWordVowelU from "./pages/Training/Words/Vowels/TrainingWordVowelU
 import Predictions from "./pages/Predictions/Predictions.jsx";
 import PredictionsWords from "./pages/Predictions/PredictionsWords.jsx";
 import PredictionsAlgorithms from "./pages/Predictions/PredictionsAlgorithms.jsx";
+import PredictionsVowels from "./pages/Predictions/PredictionsVowels.jsx";
 
 function App() {
   return (
@@ -92,6 +93,7 @@ function App() {
         <Route path="/predictions" element={<Predictions />} />
         <Route path="/predictions/words" element={<PredictionsWords />} />
         <Route path="/predictions/algorithms" element={<PredictionsAlgorithms />} />
+        <Route path="/predictions/words/vowels" element={<PredictionsVowels />} />
       </Routes>
     </Router>
   );

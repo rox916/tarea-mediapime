@@ -86,38 +86,31 @@ export const useOpbasicLogic = ({ setModalData }) => {
   }, []);
 
   // --- Guardar landmarks ---
-  const handleLandmarks = useCallback(
-    async (landmarks, opbasic) => {
-      if (!appState.isCollecting) return;
-      const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
-      if (!label) return;
+const handleLandmarks = useCallback(
+  async (landmarks, opbasic) => {
+    if (!appState.isCollecting) return;
 
-      // Agregar este console.log para ver los landmarks antes de enviarlos
-      console.log("Landmarks a enviar:", landmarks);
+    const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
+    if (!label) return;
 
-      // Validar el formato de los landmarks
-      if (!Array.isArray(landmarks) || landmarks.length !== 21) {
-        console.error("Formato de landmarks incorrecto");
-        return;
-      }
+    try {
+      // 🔹 Convertimos {x, y, z} en [x, y, z] (igual que en vocales)
+      const formattedLandmarks = landmarks.map((p) => [p.x, p.y, p.z]);
 
-      // Verificar que cada landmark tenga 3 coordenadas (x, y, z)
-      for (const point of landmarks) {
-        if (!Array.isArray(point) || point.length !== 3) {
-          console.error("Cada punto de landmark debe tener 3 coordenadas.");
-          return;
-        }
-      }
+      console.log(`Recolectando puntos clave para la operación ${label}:`, formattedLandmarks);
 
-      try {
-        await apiService.sendOpbasicLandmarks(landmarks, label); // Enviamos al backend
-        await fetchProgress();
-      } catch (error) {
-        console.error("Error al agregar muestra:", error);
-      }
-    },
-    [appState.isCollecting, appState.currentOpbasic, fetchProgress]
-  );
+      // 🔹 Mandamos al backend
+      await apiService.sendOpbasicLandmarks(formattedLandmarks, label);
+
+      // 🔹 Actualizamos progreso
+      await fetchProgress();
+    } catch (error) {
+      console.error("Error al agregar muestra:", error);
+    }
+  },
+  [appState.isCollecting, appState.currentOpbasic, fetchProgress]
+);
+
 
   // --- Predicción con throttling ---
   const lastPredictionTime = useRef(0);
@@ -198,7 +191,11 @@ export const useOpbasicLogic = ({ setModalData }) => {
         message: `¿Seguro que quieres borrar todos los datos y el modelo de '${opbasic}'?`,
         onConfirm: async () => {
           try {
+            // 🗑️ Borrar datos de la operación (elimina *_samples.json)
+            await apiService.deleteOpbasicData(opbasic);
+            // 🔄 Resetear modelo de la operación (elimina *_model.h5)
             await apiService.resetOpbasicModel(opbasic);
+
             setAppState((prev) => ({
               ...prev,
               isModelTrained: false,
@@ -219,6 +216,7 @@ export const useOpbasicLogic = ({ setModalData }) => {
     },
     [fetchProgress, setModalData]
   );
+
 
   // --- Eliminar datos ---
   const deleteOpbasicData = useCallback(

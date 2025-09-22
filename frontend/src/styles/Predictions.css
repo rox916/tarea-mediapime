@@ -1,0 +1,46 @@
+/* styles/Predictions.css */
+
+.prediction-btn {
+  padding: 0.9rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  background: white;
+  color: #1e3a72;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.prediction-btn:hover {
+  background: #f1f1f1;
+  transform: translateY(-2px);
+}
+
+.prediction-btn:disabled {
+  background: #ddd;
+  color: #888;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.predictions-buttons,
+.prediction-options {
+  display: flex;
+  justify-content: center;   /* Centra horizontalmente */
+  gap: 1.5rem;               /* Espacio entre botones */
+  margin-top: 2rem;
+}
+
+.predictions-container {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* Centra horizontalmente */
+  justify-content: center; /* Centra verticalmente */
+  min-height: 70vh;      /* Ocupar altura de la ventana */
+}

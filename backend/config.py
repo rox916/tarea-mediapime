@@ -52,7 +52,10 @@ def obtener_ruta_datos(clase):
 
 def obtener_ruta_modelo(clase):
     """Obtiene la ruta donde se almacena el modelo entrenado de una clase específica"""
-    return f"{RUTAS['models_base']}/{clase}_model.h5"
+    ruta = f"{RUTAS['models_base']}/{clase}_model.h5"
+    print(f"📂 Cargando modelo desde: {ruta}")  # 👈 debug temporal
+    return ruta
+
 
 def obtener_ruta_encoder(clase):
     """Obtiene la ruta donde se almacena el label encoder de una clase específica"""

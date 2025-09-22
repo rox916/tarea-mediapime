@@ -1,3 +1,4 @@
+// src/hooks/useNumberLogic.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiService } from "../services/api.js";
 
@@ -39,10 +40,22 @@ export const useNumberLogic = ({ setModalData }) => {
   // --- Obtener progreso ---
   const fetchProgress = useCallback(async () => {
     try {
-      const progressData = await apiService.getNumberProgress(); // ✅ endpoint nuevo
+      const progressData = await apiService.getNumberProgress();
       setAppState((prev) => {
+        const statsNumbers = progressData.estadisticas_numeros || {};
+
+        const normalizedNumberProgress = {};
+        NUMBERS.forEach((num) => {
+          const stats = statsNumbers[num] || {};
+          normalizedNumberProgress[num] = {
+            count: stats.total_muestras || 0,
+            max: stats.cantidad_recomendada || SAMPLES_PER_NUMBER,
+            percentage: stats.progreso_porcentaje || 0,
+          };
+        });
+
         const totalSamples = NUMBERS.reduce(
-          (sum, n) => sum + (progressData[n]?.cantidad || 0),
+          (sum, n) => sum + (statsNumbers[n]?.total_muestras || 0),
           0
         );
         const totalRequired = NUMBERS.length * SAMPLES_PER_NUMBER;
@@ -52,15 +65,6 @@ export const useNumberLogic = ({ setModalData }) => {
           totalProgress >= 100
             ? STATUS_MESSAGES_NUMBERS.READY_TO_TRAIN
             : prev.statusMessage;
-
-        const normalizedNumberProgress = {};
-        NUMBERS.forEach((num) => {
-          normalizedNumberProgress[num] = {
-            count: progressData[num]?.cantidad || 0,
-            max: progressData[num]?.max || SAMPLES_PER_NUMBER,
-            percentage: progressData[num]?.porcentaje || 0,
-          };
-        });
 
         return {
           ...prev,
@@ -85,7 +89,7 @@ export const useNumberLogic = ({ setModalData }) => {
     async (landmarks, number) => {
       if (!appState.isCollecting) return;
       try {
-        await apiService.sendNumberLandmarks(landmarks, number); // ✅ endpoint nuevo
+        await apiService.sendNumberLandmarks(landmarks, number);
         await fetchProgress();
       } catch (error) {
         console.error("Error al agregar muestra:", error);
@@ -110,7 +114,7 @@ export const useNumberLogic = ({ setModalData }) => {
       lastPredictionTime.current = now;
 
       try {
-        const result = await apiService.predictNumber(landmarks, number); // ✅ endpoint nuevo
+        const result = await apiService.predictNumber(landmarks, number);
         setAppState((prev) => ({
           ...prev,
           prediction: result.prediction,
@@ -142,7 +146,7 @@ export const useNumberLogic = ({ setModalData }) => {
       statusMessage: STATUS_MESSAGES_NUMBERS.TRAINING,
     }));
     try {
-      const result = await apiService.trainNumber(number); // ✅ endpoint nuevo
+      const result = await apiService.trainNumber(number);
       setAppState((prev) => ({
         ...prev,
         isModelTrained: true,
@@ -167,11 +171,11 @@ export const useNumberLogic = ({ setModalData }) => {
     (number) => {
       setModalData({
         open: true,
-        message:
-          "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
+        message: `¿Seguro que quieres borrar todos los datos y el modelo del número '${number}'?`,
         onConfirm: async () => {
           try {
-            await apiService.resetNumberModel(number); // ✅ endpoint nuevo
+            await apiService.deleteNumberData(number);
+            await apiService.resetNumberModel(number);
             setAppState((prev) => ({
               ...prev,
               isModelTrained: false,
@@ -201,7 +205,7 @@ export const useNumberLogic = ({ setModalData }) => {
         message: `¿Estás seguro de que quieres borrar todos los datos del número '${number}'?`,
         onConfirm: async () => {
           try {
-            await apiService.deleteNumberData(number); // ✅ endpoint nuevo
+            await apiService.deleteNumberData(number);
             setAppState((prev) => ({
               ...prev,
               statusMessage: `Datos del número '${number}' eliminados correctamente.`,
@@ -243,7 +247,7 @@ export const useNumberLogic = ({ setModalData }) => {
     return () => clearInterval(interval);
   }, [fetchProgress, appState.isCollecting]);
 
-  // 👇 Aquí devolvemos canTrain como booleano
+  // 👇 Ya es booleano
   const canTrain = Object.values(appState.numberProgress || {}).some(
     (n) => n.count >= 2
   );
@@ -272,6 +276,6 @@ export const useNumberLogic = ({ setModalData }) => {
     togglePrediction,
     NUMBERS,
     SAMPLES_PER_NUMBER,
-    canTrain, // ✅ ya es booleano
+    canTrain,
   };
 };

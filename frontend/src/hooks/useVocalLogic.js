@@ -9,11 +9,14 @@ const STATUS_MESSAGES = {
   COLLECTING: (v) => `Recolectando muestras para la vocal '${v}'.`,
   TRAINING: "Entrenando modelo... Esto puede tomar unos minutos.",
   TRAINING_SUCCESS: (acc) => `Entrenamiento completado! Precisión: ${acc}%`,
-  TRAINING_ERROR: "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por vocal.",
+  TRAINING_ERROR:
+    "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por vocal.",
   RESET: "Datos reiniciados correctamente.",
   READY_TO_TRAIN: "Recolección completa. Listo para entrenar el modelo.",
-  PREDICTION_ERROR: "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
-  PREDICTION_ERROR_NO_MODEL: "No hay modelo entrenado. Por favor, entrena el modelo primero.",
+  PREDICTION_ERROR:
+    "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
+  PREDICTION_ERROR_NO_MODEL:
+    "No hay modelo entrenado. Por favor, entrena el modelo primero.",
 };
 
 export const useVocalLogic = ({ setModalData }) => {
@@ -36,25 +39,42 @@ export const useVocalLogic = ({ setModalData }) => {
       const progressData = await apiService.getVowelProgress();
       setAppState((prev) => {
         const totalSamples = VOWELS.reduce(
-          (sum, v) => sum + (progressData.estadisticas_vocales?.[v]?.total_muestras || 0),
+          (sum, v) =>
+            sum +
+            (progressData.estadisticas_vocales?.[v]?.total_muestras || 0),
           0
         );
-        const totalRequired = VOWELS.length * (progressData.configuracion?.samples_recomendados || SAMPLES_PER_VOWEL);
+        const totalRequired =
+          VOWELS.length *
+          (progressData.configuracion?.samples_recomendados ||
+            SAMPLES_PER_VOWEL);
         const totalProgress = (totalSamples / totalRequired) * 100;
 
-        const newStatusMessage = totalProgress >= 100 ? STATUS_MESSAGES.READY_TO_TRAIN : prev.statusMessage;
+        const newStatusMessage =
+          totalProgress >= 100
+            ? STATUS_MESSAGES.READY_TO_TRAIN
+            : prev.statusMessage;
 
         const normalizedVowelProgress = {};
         VOWELS.forEach((v) => {
           const stats = progressData.estadisticas_vocales?.[v] || {};
-          const total = (stats.total_muestras || 0) + (stats.muestras_en_cola || 0);
+          const total =
+            (stats.total_muestras || 0) + (stats.muestras_en_cola || 0);
 
           normalizedVowelProgress[v] = {
             count: total,
             max: stats.cantidad_recomendada || SAMPLES_PER_VOWEL,
-            percentage: Math.min(100, (total / (stats.cantidad_recomendada || SAMPLES_PER_VOWEL)) * 100),
+            percentage: Math.min(
+              100,
+              (total / (stats.cantidad_recomendada || SAMPLES_PER_VOWEL)) * 100
+            ),
           };
         });
+
+        // 👇 Marcar modelo como entrenado si alguno existe
+        const someModelTrained = VOWELS.some(
+          (v) => progressData.estadisticas_vocales?.[v]?.tiene_modelo
+        );
 
         return {
           ...prev,
@@ -67,6 +87,7 @@ export const useVocalLogic = ({ setModalData }) => {
             },
           },
           statusMessage: newStatusMessage,
+          isModelTrained: someModelTrained,
         };
       });
     } catch (error) {
@@ -77,19 +98,58 @@ export const useVocalLogic = ({ setModalData }) => {
   // --- Guardar landmarks ---
   const handleLandmarks = useCallback(
     async (landmarks, vowel) => {
-      if (!appState.isCollecting) {
-        console.log("No se está recolectando datos");
+      if (!appState.isCollecting) return;
+
+      // 🔎 Verificar si ya está al 100%
+      const progress = appState.vowelProgress?.[vowel]?.percentage || 0;
+      if (progress >= 100) {
+        console.log(`⚠️ La vocal '${vowel}' ya alcanzó el 100%, auto-stop.`);
+        setAppState((prev) => ({
+          ...prev,
+          isCollecting: false,
+          currentVowel: null,
+          statusMessage: `La vocal '${vowel}' ya completó la recolección.`,
+        }));
         return;
       }
+
       try {
-        console.log(`Recolectando puntos clave para la vocal ${vowel}:`, landmarks);
         await apiService.sendVowelLandmarks(landmarks, vowel.toLowerCase());
-        await fetchProgress();
+
+        // ⚡ Actualizamos estado local rápidamente
+        setAppState((prev) => {
+          const current = prev.vowelProgress[vowel] || {
+            count: 0,
+            max: SAMPLES_PER_VOWEL,
+            percentage: 0,
+          };
+
+          const newCount = current.count + 1;
+          const newPercentage = Math.min(
+            100,
+            (newCount / (current.max || SAMPLES_PER_VOWEL)) * 100
+          );
+
+          return {
+            ...prev,
+            vowelProgress: {
+              ...prev.vowelProgress,
+              [vowel]: {
+                ...current,
+                count: newCount,
+                percentage: newPercentage,
+              },
+            },
+          };
+        });
+
+        // 🔄 Refrescar en background
+        fetchProgress();
       } catch (error) {
         console.error("Error al agregar muestra:", error);
       }
     },
-    [appState.isCollecting, fetchProgress]
+    [appState.isCollecting, appState.vowelProgress, fetchProgress]
   );
 
   // --- Predicción ---
@@ -98,8 +158,10 @@ export const useVocalLogic = ({ setModalData }) => {
   const PREDICTION_THROTTLE_MS = 200;
 
   const handlePredict = useCallback(
-    async (landmarks, vowel) => {
-      if (!appState.isPredicting || predictionInProgress.current) return;
+    async (landmarks) => {
+      if (!appState.isPredicting || predictionInProgress.current) {
+        return;
+      }
 
       const now = Date.now();
       if (now - lastPredictionTime.current < PREDICTION_THROTTLE_MS) return;
@@ -108,16 +170,17 @@ export const useVocalLogic = ({ setModalData }) => {
       lastPredictionTime.current = now;
 
       try {
-        const result = await apiService.predictVowel(landmarks, vowel.toLowerCase());
+        const result = await apiService.predictVowelGeneral(landmarks);
+
         setAppState((prev) => ({
           ...prev,
           prediction: result.prediction,
           predictionConfidence: result.confidence,
         }));
       } catch (error) {
-        console.error("Error en la predicción:", error);
+        console.error("❌ Error en la predicción:", error);
         let errorMessage = STATUS_MESSAGES.PREDICTION_ERROR;
-        if (error.response?.data?.detail?.includes("Modelo no entrenado")) {
+        if (error.response?.data?.detail?.includes("No hay modelo entrenado")) {
           errorMessage = STATUS_MESSAGES.PREDICTION_ERROR_NO_MODEL;
         }
         setAppState((prev) => ({
@@ -165,7 +228,8 @@ export const useVocalLogic = ({ setModalData }) => {
     (vowel) => {
       setModalData({
         open: true,
-        message: "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
+        message:
+          "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
         onConfirm: async () => {
           try {
             await apiService.deleteVowelData(vowel.toLowerCase());
@@ -205,7 +269,10 @@ export const useVocalLogic = ({ setModalData }) => {
               statusMessage: `Datos de la vocal '${vowel}' eliminados correctamente.`,
             }));
           } catch (error) {
-            console.error(`Error al eliminar datos de la vocal ${vowel}:`, error);
+            console.error(
+              `Error al eliminar datos de la vocal ${vowel}:`,
+              error
+            );
           } finally {
             fetchProgress();
           }
@@ -217,10 +284,6 @@ export const useVocalLogic = ({ setModalData }) => {
 
   // --- Toggle predicción ---
   const togglePrediction = useCallback(() => {
-    if (!appState.isModelTrained) {
-      console.warn("Modelo no entrenado. Por favor, entrena el modelo primero.");
-      return;
-    }
     setAppState((prev) => ({
       ...prev,
       isCollecting: false,
@@ -229,7 +292,7 @@ export const useVocalLogic = ({ setModalData }) => {
       prediction: "",
       predictionConfidence: null,
     }));
-  }, [appState.isModelTrained]);
+  }, []);
 
   // --- Ciclo de refresco ---
   useEffect(() => {
@@ -246,7 +309,11 @@ export const useVocalLogic = ({ setModalData }) => {
     handleLandmarks,
     handlePredict,
     startCollecting: (vowel) => {
-      console.log(`Recolectando vocal: ${vowel}`);
+      const progress = appState.vowelProgress?.[vowel]?.percentage || 0;
+      if (progress >= 100) {
+        console.log(`⛔ No se puede recolectar '${vowel}', ya está al 100%.`);
+        return;
+      }
       setAppState((prev) => ({
         ...prev,
         isCollecting: true,

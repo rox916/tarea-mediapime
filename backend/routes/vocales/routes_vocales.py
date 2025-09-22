@@ -206,3 +206,41 @@ async def eliminar_datos_vocal(vocal: str):
 @router.delete("/modelo/{vocal}")
 async def eliminar_modelo_vocal(vocal: str):
     return await eliminar_modelo_clase(vocal)
+
+
+@router.post("/prediccion")
+async def predecir_vocal_general(datos: SolicitudPrediccion):
+    """
+    Predice cuál vocal corresponde a los puntos clave dados.
+    Usa todos los modelos entrenados disponibles.
+    """
+    resultados = {}
+    mejor_vocal = None
+    mejor_confianza = -1
+
+    for vocal in CLASES_DISPONIBLES['vocales']:
+        ruta_modelo = obtener_ruta_modelo(vocal)
+        if not os.path.exists(ruta_modelo):
+            continue  # ignoramos vocales sin modelo entrenado
+
+        try:
+            resultado = await predecir_clase(vocal, datos.puntos_clave)
+            confianza = resultado.get("confianza", 0)
+            resultados[vocal] = resultado
+
+            if confianza > mejor_confianza:
+                mejor_confianza = confianza
+                mejor_vocal = vocal
+        except Exception as e:
+            resultados[vocal] = {"error": str(e)}
+
+    if not resultados:
+        raise HTTPException(status_code=400, detail="No hay modelos entrenados para predecir vocales")
+
+    return {
+        "prediccion": {
+            "clase_predicha": mejor_vocal,
+            "confianza": mejor_confianza,
+            "todas_las_probabilidades": resultados
+        }
+    }

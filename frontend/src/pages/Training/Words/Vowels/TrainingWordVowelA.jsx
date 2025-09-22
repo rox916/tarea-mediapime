@@ -26,6 +26,9 @@ export default function TrainingWordVowelA() {
     handlePredict,
   } = useVocalLogic({ setModalData });
 
+  // progreso actual de la vocal A
+  const progressA = appState.vowelProgress?.a?.percentage || 0;
+
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
   const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
@@ -34,12 +37,22 @@ export default function TrainingWordVowelA() {
     currentVowel: appState.currentVowel,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
+    vowelProgress: appState.vowelProgress,   // 👈 pasamos progreso
     onLandmarks: handleLandmarks,
     onPredict: handlePredict,
+    onStopCollecting: () => {                // 👈 callback desde el hook
+      console.log("🛑 Auto-stop desde useMediaPipeTasks (100% alcanzado).");
+      stopCollecting();
+    },
   });
 
-  // progreso actual de la vocal A
-  const progressA = appState.vowelProgress?.a?.percentage || 0;
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progressA >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressA, appState.isCollecting, stopCollecting]);
 
   // --- Funciones para los botones de la cámara ---
   const actionsSlot = (
@@ -60,7 +73,7 @@ export default function TrainingWordVowelA() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel("a")} // 👈 Entrena solo la 'a'
+        onClick={() => trainModel("a")}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo 'A'"}
@@ -82,7 +95,6 @@ export default function TrainingWordVowelA() {
             isInitialized={isInitialized}
             error={error}
             actionsSlot={actionsSlot}
-            // 👇 Progreso específico de la vocal 'a'
             progress={progressA}
           />
         </div>

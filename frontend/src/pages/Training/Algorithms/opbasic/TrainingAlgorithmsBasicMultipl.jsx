@@ -35,7 +35,7 @@ export default function TrainingAlgorithmsBasicMultipl() {
     videoRef,
     canvasRef,
     isCollecting: appState.isCollecting,
-    currentLabel: label, // 👈 se manda "multiplicacion" al backend
+    currentOpbasic: appState.currentOpbasic,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
     onLandmarks: (landmarks) => handleLandmarks(landmarks, label),

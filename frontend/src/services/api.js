@@ -18,12 +18,33 @@ export const apiService = {
     );
   },
 
+  // 🔹 Predicción para una vocal específica
   async predictVowel(landmarks, vowel) {
     const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
     const response = await axios.post(
       `${API_BASE_URL}/vocales/prediccion/${vowel.toLowerCase()}`,
       { puntos_clave: landmarkData }
     );
+
+    console.log("📡 predictVowel response:", response.data);
+
+    const pred = response.data.prediccion || {};
+    return {
+      prediction: pred.clase_predicha || null,
+      confidence: pred.confianza ?? null,
+      allProbabilities: pred.todas_las_probabilidades || null,
+    };
+  },
+
+  // 🔹 Predicción general (el backend decide la vocal)
+  async predictVowelGeneral(landmarks) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    const response = await axios.post(
+      `${API_BASE_URL}/vocales/prediccion`,
+      { puntos_clave: landmarkData }
+    );
+
+    console.log("📡 predictVowelGeneral response:", response.data);
 
     const pred = response.data.prediccion || {};
     return {
@@ -82,6 +103,8 @@ export const apiService = {
       { puntos_clave: landmarkData }
     );
 
+    console.log("📡 predictNumber response:", response.data);
+
     const pred = response.data.prediccion || {};
     return {
       prediction: pred.clase_predicha || null,
@@ -120,19 +143,18 @@ export const apiService = {
   },
 
   async sendOpbasicLandmarks(landmarks, op) {
-    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
-    // Aquí enviamos directamente el nombre humano de la operación
     await axios.post(`${API_BASE_URL}/operaciones/recolectar/${op}`, {
-      puntos_clave: landmarkData,
+      puntos_clave: landmarks,
     });
   },
 
   async predictOpbasic(landmarks, op) {
-    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
     const response = await axios.post(
       `${API_BASE_URL}/operaciones/prediccion/${op}`,
-      { puntos_clave: landmarkData }
+      { puntos_clave: landmarks }
     );
+
+    console.log("📡 predictOpbasic response:", response.data);
 
     const pred = response.data.prediccion || {};
     return {

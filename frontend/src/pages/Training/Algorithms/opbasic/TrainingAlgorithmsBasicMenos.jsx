@@ -27,16 +27,19 @@ export default function TrainingAlgorithmsBasicMenos() {
     handlePredict,
   } = useOpbasicLogic({ setModalData });
 
+  // 👈 usamos directamente "menos" (nombre humano esperado por el backend)
+  const label = "menos";
+
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
   const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
     canvasRef,
     isCollecting: appState.isCollecting,
-    currentOpbasic: OPBASIC_MAP["menos"], // 👈 usamos "-" para el backend
+    currentOpbasic: appState.currentOpbasic,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
-    onLandmarks: (landmarks) => handleLandmarks(landmarks, OPBASIC_MAP["menos"]),
-    onPredict: (landmarks) => handlePredict(landmarks, OPBASIC_MAP["menos"]),
+    onLandmarks: (landmarks) => handleLandmarks(landmarks, label),
+    onPredict: (landmarks) => handlePredict(landmarks, label),
   });
 
   // progreso actual de resta
@@ -52,7 +55,7 @@ export default function TrainingAlgorithmsBasicMenos() {
       ) : (
         <button
           className="action-btn collect-btn"
-          onClick={() => startCollecting(OPBASIC_MAP["menos"])}
+          onClick={() => startCollecting(label)}
           disabled={progressMenos >= 100}
         >
           🎤 Recolectar 'Resta'
@@ -61,7 +64,7 @@ export default function TrainingAlgorithmsBasicMenos() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel(OPBASIC_MAP["menos"])}
+        onClick={() => trainModel(label)}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
@@ -69,7 +72,7 @@ export default function TrainingAlgorithmsBasicMenos() {
 
       <button
         className="action-btn reset-btn"
-        onClick={() => resetData(OPBASIC_MAP["menos"])}
+        onClick={() => resetData(label)}
       >
         🔄 Reiniciar Datos
       </button>
