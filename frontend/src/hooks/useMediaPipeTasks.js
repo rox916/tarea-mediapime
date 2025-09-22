@@ -15,7 +15,9 @@ export const useMediaPipeTasks = ({
   videoRef,
   canvasRef,
   isCollecting,
-  currentLabel,      // 👈 puede ser vocal u operación básica
+  currentVowel,      // 👈 para vocales
+  currentOpbasic,    // 👈 para operaciones básicas
+  currentNumber,     // 👈 para números
   isModelTrained,
   isPredicting,
   onLandmarks,
@@ -146,12 +148,13 @@ export const useMediaPipeTasks = ({
             ctx.fill();
           }
 
-          // ✅ Callbacks
+          // ✅ Callbacks - determinar la etiqueta actual
+          const currentLabel = currentVowel || currentOpbasic || currentNumber;
           if (isCollecting && currentLabel && onLandmarks) {
-            onLandmarks(landmarks, currentLabel);  // Usamos currentLabel directamente
+            onLandmarks(landmarks, currentLabel);
           }
           if (isModelTrained && isPredicting && onPredict) {
-            onPredict(landmarks, currentLabel); // Usamos currentLabel directamente
+            onPredict(landmarks, currentLabel);
           }
         }
       }
@@ -166,7 +169,9 @@ export const useMediaPipeTasks = ({
     videoRef,
     canvasRef,
     isCollecting,
-    currentLabel,   // 👈 label genérica
+    currentVowel,
+    currentOpbasic,
+    currentNumber,
     isModelTrained,
     isPredicting,
     onLandmarks,
