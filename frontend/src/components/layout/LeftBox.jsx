@@ -1,5 +1,5 @@
 import React from "react";
-import "./LeftBox.css";
+import "../../styles/LeftBox.css";
 
 const LeftBox = () => {
   return (

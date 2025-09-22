@@ -1,12 +1,10 @@
 import React, { useRef, useState } from "react";
-import { useMediaPipe } from "../../../../hooks/useMediaPipe.js";
+import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useVocalLogic } from "../../../../hooks/useVocalLogic.js";
 
 import CameraSection from "../../../../components/camera/CameraSection.jsx";
-import SingleVowelControls from "../../../../components/controls/SingleVowelControls.jsx";
 import StatusMessage from "../../../../components/feedback/StatusMessage.jsx";
 import ConfirmModal from "../../../../components/modals/ConfirmModal.jsx";
-import LeftBox from "../../../../components/layout/LeftBox.jsx";
 
 export default function TrainingWordVowelU() {
   const videoRef = useRef(null);
@@ -20,18 +18,16 @@ export default function TrainingWordVowelU() {
 
   const {
     appState,
-    handleLandmarks,
-    handlePredict,
     startCollecting,
     stopCollecting,
     trainModel,
     resetData,
-    deleteVowelData,
-    togglePrediction,
-    canTrain,
+    handleLandmarks,
+    handlePredict,
   } = useVocalLogic({ setModalData });
 
-  const { isInitialized, isCameraReady, error } = useMediaPipe({
+  // ✅ Inicializar cámara y modelo con MediaPipe Tasks
+  const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
     canvasRef,
     isCollecting: appState.isCollecting,
@@ -42,51 +38,59 @@ export default function TrainingWordVowelU() {
     onPredict: handlePredict,
   });
 
+  // progreso actual de la vocal U
+  const progressU = appState.vowelProgress?.u?.percentage || 0;
+
+  // 👉 Botones dentro de CameraSection
+  const actionsSlot = (
+    <>
+      {appState.isCollecting && progressU < 100 ? (
+        <button className="action-btn stop-btn" onClick={stopCollecting}>
+          ⏸️ Detener Recolección
+        </button>
+      ) : (
+        <button
+          className="action-btn collect-btn"
+          onClick={() => startCollecting("u")}
+          disabled={progressU >= 100}
+        >
+          🎤 Recolectar 'U'
+        </button>
+      )}
+
+      <button
+        className="action-btn train-btn"
+        onClick={() => trainModel("u")} // 👈 Entrena solo la 'u'
+        disabled={appState.isTraining}
+      >
+        {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo 'U'"}
+      </button>
+
+      <button className="action-btn reset-btn" onClick={() => resetData("u")}>
+        🔄 Reiniciar Datos 'U'
+      </button>
+    </>
+  );
+
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>🔡 Entrenamiento de la Vocal U</h1>
-        <p>Recolecta datos para entrenar el modelo con la vocal U.</p>
-      </header>
-
-      <main className="app-main">
-        <LeftBox />
-
-        <div className="main-content">
+    <div className="training-container">
+      <div className="training-main">
+        <div className="camera-card">
           <CameraSection
             videoRef={videoRef}
             canvasRef={canvasRef}
-            isModelTrained={appState.isModelTrained}
-            isPredicting={appState.isPredicting}
-            prediction={appState.prediction}
-            predictionConfidence={appState.predictionConfidence}
-            togglePrediction={togglePrediction}
             isInitialized={isInitialized}
-            isCameraReady={isCameraReady}
             error={error}
+            actionsSlot={actionsSlot}
+            // 👇 Progreso específico de la vocal 'u'
+            progress={progressU}
           />
-
-          <div className="controls-and-info">
-            <StatusMessage message={appState.statusMessage} />
-
-            {/* 👇 Solo mostramos el progreso de la vocal U */}
-            <SingleVowelControls
-              vowel="U"
-              progress={appState.vowelProgress}
-              isCollecting={appState.isCollecting}
-              currentVowel={appState.currentVowel}
-              startCollecting={startCollecting}
-              stopCollecting={stopCollecting}
-              deleteVowelData={deleteVowelData}
-              canTrain={canTrain}
-              isTraining={appState.isTraining}
-              trainModel={trainModel}
-              resetData={resetData}
-              statusMessage={appState.statusMessage}
-            />
-          </div>
         </div>
-      </main>
+
+        <div className="status-box">
+          <StatusMessage message={appState.statusMessage} />
+        </div>
+      </div>
 
       <ConfirmModal
         isOpen={modalData.open}

@@ -79,12 +79,13 @@ export default function SingleNumberControls({
       <div className="action-buttons-wrapper">
         <ActionButtons
           isCollecting={isCollecting}
-          canTrain={canTrain()}
+          canTrain={canTrain}   // 👈 ahora ya no lleva ()
           isTraining={isTraining}
           stopCollecting={stopCollecting}
           trainModel={trainModel}
           resetData={resetData}
         />
+
       </div>
 
       {/* Mensaje de estado */}

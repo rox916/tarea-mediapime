@@ -1,10 +1,112 @@
-import SingleopbasicControls from "../../../components/controls/SingleopbasicControls.jsx";
+// src/pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx
+import React, { useRef, useState } from "react";
+import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
+import { useOpbasicLogic } from "../../../../hooks/useOpbasicLogic.js";
 
-export default function TrainingAlgorithmsBasicmas(props) {
+import CameraSection from "../../../../components/camera/CameraSection.jsx";
+import StatusMessage from "../../../../components/feedback/StatusMessage.jsx";
+import ConfirmModal from "../../../../components/modals/ConfirmModal.jsx";
+
+export default function TrainingAlgorithmsBasicMenos() {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const [modalData, setModalData] = useState({
+    open: false,
+    message: "",
+    onConfirm: null,
+  });
+
+  const {
+    appState,
+    startCollecting,
+    stopCollecting,
+    trainModel,
+    resetData,
+    handleLandmarks,
+    handlePredict,
+  } = useOpbasicLogic({ setModalData });
+
+  // ✅ Inicializar cámara y modelo con MediaPipe Tasks
+  const { isInitialized, error } = useMediaPipeTasks({
+    videoRef,
+    canvasRef,
+    isCollecting: appState.isCollecting,
+    currentOpbasic: OPBASIC_MAP["menos"], // 👈 usamos "-" para el backend
+    isModelTrained: appState.isModelTrained,
+    isPredicting: appState.isPredicting,
+    onLandmarks: (landmarks) => handleLandmarks(landmarks, OPBASIC_MAP["menos"]),
+    onPredict: (landmarks) => handlePredict(landmarks, OPBASIC_MAP["menos"]),
+  });
+
+  // progreso actual de resta
+  const progressMenos = appState.opbasicProgress?.menos?.percentage || 0;
+
+  // 👉 Botones dentro de CameraSection
+  const actionsSlot = (
+    <>
+      {appState.isCollecting && progressMenos < 100 ? (
+        <button className="action-btn stop-btn" onClick={stopCollecting}>
+          ⏸️ Detener Recolección
+        </button>
+      ) : (
+        <button
+          className="action-btn collect-btn"
+          onClick={() => startCollecting(OPBASIC_MAP["menos"])}
+          disabled={progressMenos >= 100}
+        >
+          🎤 Recolectar 'Resta'
+        </button>
+      )}
+
+      <button
+        className="action-btn train-btn"
+        onClick={() => trainModel(OPBASIC_MAP["menos"])}
+        disabled={appState.isTraining}
+      >
+        {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
+      </button>
+
+      <button
+        className="action-btn reset-btn"
+        onClick={() => resetData(OPBASIC_MAP["menos"])}
+      >
+        🔄 Reiniciar Datos
+      </button>
+    </>
+  );
+
   return (
-    <SingleopbasicControls
-      opbasic="menos"
-      {...props}
-    />
+    <div className="training-container">
+      <div className="training-main">
+        <div className="camera-card">
+          <CameraSection
+            videoRef={videoRef}
+            canvasRef={canvasRef}
+            isInitialized={isInitialized}
+            error={error}
+            actionsSlot={actionsSlot}
+            // 👇 Progreso específico de resta
+            progress={progressMenos}
+          />
+        </div>
+
+        <div className="status-box">
+          <StatusMessage message={appState.statusMessage} />
+        </div>
+      </div>
+
+      <ConfirmModal
+        isOpen={modalData.open}
+        message={modalData.message}
+        onConfirm={() => {
+          modalData.onConfirm?.();
+          setModalData({ open: false, message: "", onConfirm: null });
+        }}
+        onCancel={() =>
+          setModalData({ open: false, message: "", onConfirm: null })
+        }
+      />
+    </div>
   );
 }

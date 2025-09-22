@@ -26,10 +26,10 @@ import TrainingAlgorithmsNumber9 from "./pages/Training/Algorithms/numbers/Train
 import TrainingAlgorithmsNumber0 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx";
 
 // Training - operaciones individuales
-import TrainingAlgorithmsBasicmas from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx";
-import TrainingAlgorithmsBasicmenos from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx";
-import TrainingAlgorithmsBasicmultipl from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx";
-import TrainingAlgorithmsBasicdivision from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicDivision.jsx";
+import TrainingAlgorithmsBasicMas from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx";
+import TrainingAlgorithmsBasicMenos from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx";
+import TrainingAlgorithmsBasicMultipl from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx";
+import TrainingAlgorithmsBasicDivision from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicDivision.jsx";
 
 // Training - Vocales individuales
 import TrainingWordVowelA from "./pages/Training/Words/Vowels/TrainingWordVowelA.jsx";
@@ -71,10 +71,10 @@ function App() {
         <Route path="/training/algorithms/numbers/0" element={<TrainingAlgorithmsNumber0 />} />
 
         {/* Training → Algorithms → opbasic */}
-        <Route path="/training/algorithms/opbasic/mas" element={<TrainingAlgorithmsBasicmas />} />
-        <Route path="/training/algorithms/opbasic/menos" element={<TrainingAlgorithmsBasicmenos />} />
-        <Route path="/training/algorithms/opbasic/multipl" element={<TrainingAlgorithmsBasicmultipl />} />
-        <Route path="/training/algorithms/opbasic/division" element={<TrainingAlgorithmsBasicdivision />} />
+        <Route path="/training/algorithms/opbasic/mas" element={<TrainingAlgorithmsBasicMas />} />
+        <Route path="/training/algorithms/opbasic/menos" element={<TrainingAlgorithmsBasicMenos />} />
+        <Route path="/training/algorithms/opbasic/multiplicacion" element={<TrainingAlgorithmsBasicMultipl />} />
+        <Route path="/training/algorithms/opbasic/division" element={<TrainingAlgorithmsBasicDivision />} />
 
         {/* Training → Words */}
         <Route path="/training/words" element={<TrainingWords />} />

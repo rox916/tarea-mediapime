@@ -1,65 +1,71 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiService } from "../services/api.js";
 
-const VOWELS = ["a", "e", "i", "o", "u"];
-const SAMPLES_PER_VOWEL = 100;
+const NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+const SAMPLES_PER_NUMBER = 100;
 
-const STATUS_MESSAGES = {
-  IDLE: "Inactivo. Selecciona una vocal para empezar a recolectar.",
-  COLLECTING: (v) => `Recolectando muestras para la vocal '${v}'.`,
+// Mensajes de estado centralizados para números
+const STATUS_MESSAGES_NUMBERS = {
+  IDLE: "Inactivo. Selecciona un número para empezar a recolectar.",
+  COLLECTING: (n) => `Recolectando muestras para el número '${n}'.`,
   TRAINING: "Entrenando modelo... Esto puede tomar unos minutos.",
   TRAINING_SUCCESS: (acc) => `Entrenamiento completado! Precisión: ${acc}%`,
-  TRAINING_ERROR: "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por vocal.",
+  TRAINING_ERROR:
+    "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por número.",
+  TRAINING_ERROR_INSUFFICIENT:
+    "No hay suficientes datos para entrenar. Recolecta al menos 2 muestras para cada número.",
   RESET: "Datos reiniciados correctamente.",
   READY_TO_TRAIN: "Recolección completa. Listo para entrenar el modelo.",
-  PREDICTION_ERROR: "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
-  PREDICTION_ERROR_NO_MODEL: "No hay modelo entrenado. Por favor, entrena el modelo primero.",
+  PREDICTION_ERROR:
+    "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
+  PREDICTION_ERROR_NO_MODEL:
+    "No hay modelo entrenado. Por favor, entrena el modelo primero.",
 };
 
-export const useVocalLogic = ({ setModalData }) => {
+export const useNumberLogic = ({ setModalData }) => {
   const [appState, setAppState] = useState({
     isCollecting: false,
     isTraining: false,
     isModelTrained: false,
     isPredicting: false,
-    currentVowel: null,
+    currentNumber: null,
     prediction: "",
     predictionConfidence: null,
     trainingAccuracy: null,
-    statusMessage: STATUS_MESSAGES.IDLE,
-    vowelProgress: {},
+    statusMessage: STATUS_MESSAGES_NUMBERS.IDLE,
+    numberProgress: {},
   });
 
   // --- Obtener progreso ---
   const fetchProgress = useCallback(async () => {
     try {
-      const progressData = await apiService.getVowelProgress();
+      const progressData = await apiService.getNumberProgress(); // ✅ endpoint nuevo
       setAppState((prev) => {
-        const totalSamples = VOWELS.reduce(
-          (sum, v) => sum + (progressData.estadisticas_vocales?.[v]?.total_muestras || 0),
+        const totalSamples = NUMBERS.reduce(
+          (sum, n) => sum + (progressData[n]?.cantidad || 0),
           0
         );
-        const totalRequired = VOWELS.length * (progressData.configuracion?.samples_recomendados || SAMPLES_PER_VOWEL);
+        const totalRequired = NUMBERS.length * SAMPLES_PER_NUMBER;
         const totalProgress = (totalSamples / totalRequired) * 100;
 
-        const newStatusMessage = totalProgress >= 100 ? STATUS_MESSAGES.READY_TO_TRAIN : prev.statusMessage;
+        const newStatusMessage =
+          totalProgress >= 100
+            ? STATUS_MESSAGES_NUMBERS.READY_TO_TRAIN
+            : prev.statusMessage;
 
-        const normalizedVowelProgress = {};
-        VOWELS.forEach((v) => {
-          const stats = progressData.estadisticas_vocales?.[v] || {};
-          const total = (stats.total_muestras || 0) + (stats.muestras_en_cola || 0);
-
-          normalizedVowelProgress[v] = {
-            count: total,
-            max: stats.cantidad_recomendada || SAMPLES_PER_VOWEL,
-            percentage: Math.min(100, (total / (stats.cantidad_recomendada || SAMPLES_PER_VOWEL)) * 100),
+        const normalizedNumberProgress = {};
+        NUMBERS.forEach((num) => {
+          normalizedNumberProgress[num] = {
+            count: progressData[num]?.cantidad || 0,
+            max: progressData[num]?.max || SAMPLES_PER_NUMBER,
+            percentage: progressData[num]?.porcentaje || 0,
           };
         });
 
         return {
           ...prev,
-          vowelProgress: {
-            ...normalizedVowelProgress,
+          numberProgress: {
+            ...normalizedNumberProgress,
             total: {
               samples: totalSamples,
               max: totalRequired,
@@ -76,14 +82,10 @@ export const useVocalLogic = ({ setModalData }) => {
 
   // --- Guardar landmarks ---
   const handleLandmarks = useCallback(
-    async (landmarks, vowel) => {
-      if (!appState.isCollecting) {
-        console.log("No se está recolectando datos");
-        return;
-      }
+    async (landmarks, number) => {
+      if (!appState.isCollecting) return;
       try {
-        console.log(`Recolectando puntos clave para la vocal ${vowel}:`, landmarks);
-        await apiService.sendVowelLandmarks(landmarks, vowel.toLowerCase());
+        await apiService.sendNumberLandmarks(landmarks, number); // ✅ endpoint nuevo
         await fetchProgress();
       } catch (error) {
         console.error("Error al agregar muestra:", error);
@@ -92,13 +94,13 @@ export const useVocalLogic = ({ setModalData }) => {
     [appState.isCollecting, fetchProgress]
   );
 
-  // --- Predicción ---
+  // --- Predicción con throttling ---
   const lastPredictionTime = useRef(0);
   const predictionInProgress = useRef(false);
   const PREDICTION_THROTTLE_MS = 200;
 
   const handlePredict = useCallback(
-    async (landmarks, vowel) => {
+    async (landmarks, number) => {
       if (!appState.isPredicting || predictionInProgress.current) return;
 
       const now = Date.now();
@@ -108,7 +110,7 @@ export const useVocalLogic = ({ setModalData }) => {
       lastPredictionTime.current = now;
 
       try {
-        const result = await apiService.predictVowel(landmarks, vowel.toLowerCase());
+        const result = await apiService.predictNumber(landmarks, number); // ✅ endpoint nuevo
         setAppState((prev) => ({
           ...prev,
           prediction: result.prediction,
@@ -116,9 +118,9 @@ export const useVocalLogic = ({ setModalData }) => {
         }));
       } catch (error) {
         console.error("Error en la predicción:", error);
-        let errorMessage = STATUS_MESSAGES.PREDICTION_ERROR;
+        let errorMessage = STATUS_MESSAGES_NUMBERS.PREDICTION_ERROR;
         if (error.response?.data?.detail?.includes("Modelo no entrenado")) {
-          errorMessage = STATUS_MESSAGES.PREDICTION_ERROR_NO_MODEL;
+          errorMessage = STATUS_MESSAGES_NUMBERS.PREDICTION_ERROR_NO_MODEL;
         }
         setAppState((prev) => ({
           ...prev,
@@ -133,27 +135,27 @@ export const useVocalLogic = ({ setModalData }) => {
   );
 
   // --- Entrenamiento ---
-  const trainModel = useCallback(async (vowel) => {
+  const trainModel = useCallback(async (number) => {
     setAppState((prev) => ({
       ...prev,
       isTraining: true,
-      statusMessage: STATUS_MESSAGES.TRAINING,
+      statusMessage: STATUS_MESSAGES_NUMBERS.TRAINING,
     }));
     try {
-      const result = await apiService.trainVowel(vowel.toLowerCase());
-      const acc = result.resultado?.precision_validacion ?? 0;
-
+      const result = await apiService.trainNumber(number); // ✅ endpoint nuevo
       setAppState((prev) => ({
         ...prev,
         isModelTrained: true,
-        trainingAccuracy: acc,
-        statusMessage: STATUS_MESSAGES.TRAINING_SUCCESS(acc),
+        trainingAccuracy: result.accuracy,
+        statusMessage: STATUS_MESSAGES_NUMBERS.TRAINING_SUCCESS(
+          result.accuracy
+        ),
       }));
     } catch (err) {
       console.error("Error durante el entrenamiento:", err);
       setAppState((prev) => ({
         ...prev,
-        statusMessage: STATUS_MESSAGES.TRAINING_ERROR,
+        statusMessage: STATUS_MESSAGES_NUMBERS.TRAINING_ERROR,
       }));
     } finally {
       setAppState((prev) => ({ ...prev, isTraining: false }));
@@ -162,14 +164,14 @@ export const useVocalLogic = ({ setModalData }) => {
 
   // --- Reset de datos ---
   const resetData = useCallback(
-    (vowel) => {
+    (number) => {
       setModalData({
         open: true,
-        message: "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
+        message:
+          "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
         onConfirm: async () => {
           try {
-            await apiService.deleteVowelData(vowel.toLowerCase());
-            await apiService.resetVowelModel(vowel.toLowerCase());
+            await apiService.resetNumberModel(number); // ✅ endpoint nuevo
             setAppState((prev) => ({
               ...prev,
               isModelTrained: false,
@@ -177,8 +179,8 @@ export const useVocalLogic = ({ setModalData }) => {
               prediction: "",
               predictionConfidence: null,
               trainingAccuracy: null,
-              statusMessage: STATUS_MESSAGES.RESET,
-              vowelProgress: {},
+              statusMessage: STATUS_MESSAGES_NUMBERS.RESET,
+              numberProgress: {},
             }));
           } catch (error) {
             console.error("Error al reiniciar datos:", error);
@@ -191,21 +193,21 @@ export const useVocalLogic = ({ setModalData }) => {
     [fetchProgress, setModalData]
   );
 
-  // --- Eliminar datos ---
-  const deleteVowelData = useCallback(
-    (vowel) => {
+  // --- Eliminar datos de un número ---
+  const deleteNumberData = useCallback(
+    (number) => {
       setModalData({
         open: true,
-        message: `¿Estás seguro de que quieres borrar todos los datos de la vocal '${vowel}'?`,
+        message: `¿Estás seguro de que quieres borrar todos los datos del número '${number}'?`,
         onConfirm: async () => {
           try {
-            await apiService.deleteVowelData(vowel.toLowerCase());
+            await apiService.deleteNumberData(number); // ✅ endpoint nuevo
             setAppState((prev) => ({
               ...prev,
-              statusMessage: `Datos de la vocal '${vowel}' eliminados correctamente.`,
+              statusMessage: `Datos del número '${number}' eliminados correctamente.`,
             }));
           } catch (error) {
-            console.error(`Error al eliminar datos de la vocal ${vowel}:`, error);
+            console.error(`Error al eliminar datos del número ${number}:`, error);
           } finally {
             fetchProgress();
           }
@@ -224,7 +226,7 @@ export const useVocalLogic = ({ setModalData }) => {
     setAppState((prev) => ({
       ...prev,
       isCollecting: false,
-      currentVowel: null,
+      currentNumber: null,
       isPredicting: !prev.isPredicting,
       prediction: "",
       predictionConfidence: null,
@@ -241,31 +243,35 @@ export const useVocalLogic = ({ setModalData }) => {
     return () => clearInterval(interval);
   }, [fetchProgress, appState.isCollecting]);
 
+  // 👇 Aquí devolvemos canTrain como booleano
+  const canTrain = Object.values(appState.numberProgress || {}).some(
+    (n) => n.count >= 2
+  );
+
   return {
     appState,
     handleLandmarks,
     handlePredict,
-    startCollecting: (vowel) => {
-      console.log(`Recolectando vocal: ${vowel}`);
+    startCollecting: (number) =>
       setAppState((prev) => ({
         ...prev,
         isCollecting: true,
-        currentVowel: vowel.toLowerCase(),
-        statusMessage: STATUS_MESSAGES.COLLECTING(vowel.toLowerCase()),
-      }));
-    },
+        currentNumber: number,
+        statusMessage: STATUS_MESSAGES_NUMBERS.COLLECTING(number),
+      })),
     stopCollecting: () =>
       setAppState((prev) => ({
         ...prev,
         isCollecting: false,
-        currentVowel: null,
-        statusMessage: STATUS_MESSAGES.IDLE,
+        currentNumber: null,
+        statusMessage: STATUS_MESSAGES_NUMBERS.IDLE,
       })),
     trainModel,
     resetData,
-    deleteVowelData,
+    deleteNumberData,
     togglePrediction,
-    VOWELS,
-    SAMPLES_PER_VOWEL,
+    NUMBERS,
+    SAMPLES_PER_NUMBER,
+    canTrain, // ✅ ya es booleano
   };
 };

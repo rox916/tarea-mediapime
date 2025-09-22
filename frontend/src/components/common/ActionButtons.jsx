@@ -1,5 +1,5 @@
 import React from 'react';
-import './ActionButtons.css';
+import "../../styles/ActionButtons.css";
 
 const ActionButtons = ({ 
   isCollecting, 
@@ -10,7 +10,7 @@ const ActionButtons = ({
   resetData 
 }) => {
   // ✅ Nos aseguramos de que canTrain sea siempre una función
-  const canTrainFn = typeof canTrain === 'function' ? canTrain : () => false;
+  const canTrainFn = !!canTrain;
 
   return (
     <div className="action-buttons">

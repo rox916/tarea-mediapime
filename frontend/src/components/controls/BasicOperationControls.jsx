@@ -2,47 +2,43 @@ import React from "react";
 import ActionButtons from "../common/ActionButtons.jsx";
 import StatusMessage from "../feedback/StatusMessage.jsx";
 
-const SAMPLES_PER_opbasic = 100;
+const SAMPLES_PER_OPBASIC = 100;
 
-export default function SingleopbasicControls({
+export default function BasicOperationControls({
   opbasic,
   progress,
   isCollecting,
-  currentopbasic,
+  currentOpbasic,
   startCollecting,
   stopCollecting,
-  deleteopbasicData,
+  deleteOpbasicData,
   canTrain,
   isTraining,
   trainModel,
   resetData,
-  statusMessage
+  statusMessage,
 }) {
-  const opbasicProgress = progress[opbasic] || { count: 0, percentage: 0 };
-  const count = opbasicProgress.count;
-  const percentage = opbasicProgress.percentage;
-  const isComplete = count >= SAMPLES_PER_opbasic;
-  const isCurrentlyCollecting = isCollecting && currentopbasic === opbasic;
+  const opbasicProgress = progress?.[opbasic] || { count: 0, percentage: 0 };
+  const count = opbasicProgress.count || 0;
+  const percentage = opbasicProgress.percentage || 0;
+  const isComplete = count >= SAMPLES_PER_OPBASIC;
+  const isCurrentlyCollecting = isCollecting && currentOpbasic === opbasic;
 
   return (
     <div className="controls-section">
-      <h2>🎛️ Entrenamiento de la operacion {opbasic}</h2>
+      <h2>🎛️ Entrenamiento de la operación {opbasic}</h2>
 
-      {/* Progreso de la vocal */}
       <div className="opbasic-item">
         <div className="opbasic-header">
-          <span className="opbasic-label">operacion de '{opbasic}'</span>
+          <span className="opbasic-label">Operación: '{opbasic}'</span>
           <span className="sample-count">
-            {count}/{SAMPLES_PER_opbasic}
+            {count}/{SAMPLES_PER_OPBASIC}
             {isComplete && " ✅"}
           </span>
         </div>
 
         <div className="progress-bar">
-          <div
-            className="progress-fill"
-            style={{ width: `${percentage}%` }}
-          />
+          <div className="progress-fill" style={{ width: `${percentage}%` }} />
         </div>
 
         <button
@@ -51,35 +47,36 @@ export default function SingleopbasicControls({
             ${isComplete ? "complete" : ""}`}
           onClick={() => {
             if (!isComplete) {
-              isCurrentlyCollecting ? stopCollecting() : startCollecting(opbasic);
+              isCurrentlyCollecting
+                ? stopCollecting()
+                : startCollecting(opbasic);
             }
           }}
           disabled={isComplete}
         >
           {isComplete
-            ? `Operacion de '${opbasic}' Completa`
+            ? `Operación '${opbasic}' completa`
             : isCurrentlyCollecting
-            ? `Detener Recolección de '${opbasic}'`
-            : `Recolectar '${opbasic}' (${count}/${SAMPLES_PER_opbasic})`}
+            ? `Detener recolección de '${opbasic}'`
+            : `Recolectar '${opbasic}' (${count}/${SAMPLES_PER_OPBASIC})`}
         </button>
 
         {count > 0 && (
           <button
             className="delete-btn"
-            onClick={() => deleteopbasicData(opbasic)}
+            onClick={() => deleteOpbasicData(opbasic)}
             disabled={isCurrentlyCollecting && !isComplete}
-            title={`Eliminar datos de la vocal '${opbasic}'`}
+            title={`Eliminar datos de la operación '${opbasic}'`}
           >
             🗑️ Eliminar '{opbasic}'
           </button>
         )}
       </div>
 
-      {/* Botones generales */}
       <div className="action-buttons-wrapper">
         <ActionButtons
           isCollecting={isCollecting}
-          canTrain={canTrain()}
+          canTrain={canTrain}
           isTraining={isTraining}
           stopCollecting={stopCollecting}
           trainModel={trainModel}
@@ -87,7 +84,6 @@ export default function SingleopbasicControls({
         />
       </div>
 
-      {/* Mensaje de estado */}
       <StatusMessage message={statusMessage} />
     </div>
   );

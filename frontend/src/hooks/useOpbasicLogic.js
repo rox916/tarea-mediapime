@@ -1,65 +1,76 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiService } from "../services/api.js";
 
-const VOWELS = ["a", "e", "i", "o", "u"];
-const SAMPLES_PER_VOWEL = 100;
+// ⚠️ Definimos operaciones en nombres "humanos"
+const OPBASICS = ["division", "multiplicacion", "mas", "menos"];
+const SAMPLES_PER_OPBASIC = 100;
 
-const STATUS_MESSAGES = {
-  IDLE: "Inactivo. Selecciona una vocal para empezar a recolectar.",
-  COLLECTING: (v) => `Recolectando muestras para la vocal '${v}'.`,
+const STATUS_MESSAGES_OPBASICS = {
+  IDLE: "Inactivo. Selecciona una operación para empezar a recolectar.",
+  COLLECTING: (op) => `Recolectando muestras para la operación '${op}'.`,
   TRAINING: "Entrenando modelo... Esto puede tomar unos minutos.",
   TRAINING_SUCCESS: (acc) => `Entrenamiento completado! Precisión: ${acc}%`,
-  TRAINING_ERROR: "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por vocal.",
+  TRAINING_ERROR:
+    "Error al entrenar el modelo. Asegúrate de tener al menos 2 muestras por operación.",
+  TRAINING_ERROR_INSUFFICIENT:
+    "No hay suficientes datos para entrenar. Recolecta al menos 2 muestras por operación.",
   RESET: "Datos reiniciados correctamente.",
   READY_TO_TRAIN: "Recolección completa. Listo para entrenar el modelo.",
-  PREDICTION_ERROR: "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
-  PREDICTION_ERROR_NO_MODEL: "No hay modelo entrenado. Por favor, entrena el modelo primero.",
+  PREDICTION_ERROR:
+    "Error en la predicción. Asegúrate de que el modelo esté entrenado.",
+  PREDICTION_ERROR_NO_MODEL:
+    "No hay modelo entrenado. Por favor, entrena el modelo primero.",
 };
 
-export const useVocalLogic = ({ setModalData }) => {
+export const useOpbasicLogic = ({ setModalData }) => {
   const [appState, setAppState] = useState({
     isCollecting: false,
     isTraining: false,
     isModelTrained: false,
     isPredicting: false,
-    currentVowel: null,
+    currentOpbasic: null, // 👈 siempre en nombre humano ("multiplicacion")
     prediction: "",
     predictionConfidence: null,
     trainingAccuracy: null,
-    statusMessage: STATUS_MESSAGES.IDLE,
-    vowelProgress: {},
+    statusMessage: STATUS_MESSAGES_OPBASICS.IDLE,
+    opbasicProgress: {},
   });
 
   // --- Obtener progreso ---
   const fetchProgress = useCallback(async () => {
     try {
-      const progressData = await apiService.getVowelProgress();
+      const progressData = await apiService.getOpbasicProgress();
+      const stats = progressData.estadisticas_operaciones || {};
+
       setAppState((prev) => {
-        const totalSamples = VOWELS.reduce(
-          (sum, v) => sum + (progressData.estadisticas_vocales?.[v]?.total_muestras || 0),
+        const normalizedProgress = {};
+
+        Object.entries(stats).forEach(([op, values]) => {
+          if (OPBASICS.includes(op)) {
+            normalizedProgress[op] = {
+              count: values.total_muestras || 0,
+              max: values.cantidad_recomendada || SAMPLES_PER_OPBASIC,
+              percentage: values.progreso_porcentaje || 0,
+            };
+          }
+        });
+
+        const totalSamples = Object.values(normalizedProgress).reduce(
+          (sum, op) => sum + (op.count || 0),
           0
         );
-        const totalRequired = VOWELS.length * (progressData.configuracion?.samples_recomendados || SAMPLES_PER_VOWEL);
+        const totalRequired = OPBASICS.length * SAMPLES_PER_OPBASIC;
         const totalProgress = (totalSamples / totalRequired) * 100;
 
-        const newStatusMessage = totalProgress >= 100 ? STATUS_MESSAGES.READY_TO_TRAIN : prev.statusMessage;
-
-        const normalizedVowelProgress = {};
-        VOWELS.forEach((v) => {
-          const stats = progressData.estadisticas_vocales?.[v] || {};
-          const total = (stats.total_muestras || 0) + (stats.muestras_en_cola || 0);
-
-          normalizedVowelProgress[v] = {
-            count: total,
-            max: stats.cantidad_recomendada || SAMPLES_PER_VOWEL,
-            percentage: Math.min(100, (total / (stats.cantidad_recomendada || SAMPLES_PER_VOWEL)) * 100),
-          };
-        });
+        const newStatusMessage =
+          totalProgress >= 100
+            ? STATUS_MESSAGES_OPBASICS.READY_TO_TRAIN
+            : prev.statusMessage;
 
         return {
           ...prev,
-          vowelProgress: {
-            ...normalizedVowelProgress,
+          opbasicProgress: {
+            ...normalizedProgress,
             total: {
               samples: totalSamples,
               max: totalRequired,
@@ -76,29 +87,45 @@ export const useVocalLogic = ({ setModalData }) => {
 
   // --- Guardar landmarks ---
   const handleLandmarks = useCallback(
-    async (landmarks, vowel) => {
-      if (!appState.isCollecting) {
-        console.log("No se está recolectando datos");
+    async (landmarks, opbasic) => {
+      if (!appState.isCollecting) return;
+      const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
+      if (!label) return;
+
+      // Agregar este console.log para ver los landmarks antes de enviarlos
+      console.log("Landmarks a enviar:", landmarks);
+
+      // Validar el formato de los landmarks
+      if (!Array.isArray(landmarks) || landmarks.length !== 21) {
+        console.error("Formato de landmarks incorrecto");
         return;
       }
+
+      // Verificar que cada landmark tenga 3 coordenadas (x, y, z)
+      for (const point of landmarks) {
+        if (!Array.isArray(point) || point.length !== 3) {
+          console.error("Cada punto de landmark debe tener 3 coordenadas.");
+          return;
+        }
+      }
+
       try {
-        console.log(`Recolectando puntos clave para la vocal ${vowel}:`, landmarks);
-        await apiService.sendVowelLandmarks(landmarks, vowel.toLowerCase());
+        await apiService.sendOpbasicLandmarks(landmarks, label); // Enviamos al backend
         await fetchProgress();
       } catch (error) {
         console.error("Error al agregar muestra:", error);
       }
     },
-    [appState.isCollecting, fetchProgress]
+    [appState.isCollecting, appState.currentOpbasic, fetchProgress]
   );
 
-  // --- Predicción ---
+  // --- Predicción con throttling ---
   const lastPredictionTime = useRef(0);
   const predictionInProgress = useRef(false);
   const PREDICTION_THROTTLE_MS = 200;
 
   const handlePredict = useCallback(
-    async (landmarks, vowel) => {
+    async (landmarks, opbasic) => {
       if (!appState.isPredicting || predictionInProgress.current) return;
 
       const now = Date.now();
@@ -108,7 +135,10 @@ export const useVocalLogic = ({ setModalData }) => {
       lastPredictionTime.current = now;
 
       try {
-        const result = await apiService.predictVowel(landmarks, vowel.toLowerCase());
+        const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
+        if (!label) return;
+
+        const result = await apiService.predictOpbasic(landmarks, label);
         setAppState((prev) => ({
           ...prev,
           prediction: result.prediction,
@@ -116,9 +146,9 @@ export const useVocalLogic = ({ setModalData }) => {
         }));
       } catch (error) {
         console.error("Error en la predicción:", error);
-        let errorMessage = STATUS_MESSAGES.PREDICTION_ERROR;
+        let errorMessage = STATUS_MESSAGES_OPBASICS.PREDICTION_ERROR;
         if (error.response?.data?.detail?.includes("Modelo no entrenado")) {
-          errorMessage = STATUS_MESSAGES.PREDICTION_ERROR_NO_MODEL;
+          errorMessage = STATUS_MESSAGES_OPBASICS.PREDICTION_ERROR_NO_MODEL;
         }
         setAppState((prev) => ({
           ...prev,
@@ -129,47 +159,46 @@ export const useVocalLogic = ({ setModalData }) => {
         predictionInProgress.current = false;
       }
     },
-    [appState.isPredicting]
+    [appState.isPredicting, appState.currentOpbasic]
   );
 
   // --- Entrenamiento ---
-  const trainModel = useCallback(async (vowel) => {
+  const trainModel = useCallback(async (opbasic) => {
     setAppState((prev) => ({
       ...prev,
       isTraining: true,
-      statusMessage: STATUS_MESSAGES.TRAINING,
+      statusMessage: STATUS_MESSAGES_OPBASICS.TRAINING,
     }));
     try {
-      const result = await apiService.trainVowel(vowel.toLowerCase());
-      const acc = result.resultado?.precision_validacion ?? 0;
-
+      const result = await apiService.trainOpbasic(opbasic);
       setAppState((prev) => ({
         ...prev,
         isModelTrained: true,
-        trainingAccuracy: acc,
-        statusMessage: STATUS_MESSAGES.TRAINING_SUCCESS(acc),
+        trainingAccuracy: result.accuracy,
+        statusMessage: STATUS_MESSAGES_OPBASICS.TRAINING_SUCCESS(
+          result.accuracy
+        ),
       }));
     } catch (err) {
       console.error("Error durante el entrenamiento:", err);
       setAppState((prev) => ({
         ...prev,
-        statusMessage: STATUS_MESSAGES.TRAINING_ERROR,
+        statusMessage: STATUS_MESSAGES_OPBASICS.TRAINING_ERROR,
       }));
     } finally {
       setAppState((prev) => ({ ...prev, isTraining: false }));
     }
   }, []);
 
-  // --- Reset de datos ---
+  // --- Reset ---
   const resetData = useCallback(
-    (vowel) => {
+    (opbasic) => {
       setModalData({
         open: true,
-        message: "¿Estás seguro de que quieres borrar todos los datos y el modelo?",
+        message: `¿Seguro que quieres borrar todos los datos y el modelo de '${opbasic}'?`,
         onConfirm: async () => {
           try {
-            await apiService.deleteVowelData(vowel.toLowerCase());
-            await apiService.resetVowelModel(vowel.toLowerCase());
+            await apiService.resetOpbasicModel(opbasic);
             setAppState((prev) => ({
               ...prev,
               isModelTrained: false,
@@ -177,8 +206,8 @@ export const useVocalLogic = ({ setModalData }) => {
               prediction: "",
               predictionConfidence: null,
               trainingAccuracy: null,
-              statusMessage: STATUS_MESSAGES.RESET,
-              vowelProgress: {},
+              statusMessage: STATUS_MESSAGES_OPBASICS.RESET,
+              opbasicProgress: {},
             }));
           } catch (error) {
             console.error("Error al reiniciar datos:", error);
@@ -192,20 +221,20 @@ export const useVocalLogic = ({ setModalData }) => {
   );
 
   // --- Eliminar datos ---
-  const deleteVowelData = useCallback(
-    (vowel) => {
+  const deleteOpbasicData = useCallback(
+    (opbasic) => {
       setModalData({
         open: true,
-        message: `¿Estás seguro de que quieres borrar todos los datos de la vocal '${vowel}'?`,
+        message: `¿Seguro que quieres borrar todos los datos de '${opbasic}'?`,
         onConfirm: async () => {
           try {
-            await apiService.deleteVowelData(vowel.toLowerCase());
+            await apiService.deleteOpbasicData(opbasic);
             setAppState((prev) => ({
               ...prev,
-              statusMessage: `Datos de la vocal '${vowel}' eliminados correctamente.`,
+              statusMessage: `Datos de la operación '${opbasic}' eliminados correctamente.`,
             }));
           } catch (error) {
-            console.error(`Error al eliminar datos de la vocal ${vowel}:`, error);
+            console.error(`Error al eliminar datos de ${opbasic}:`, error);
           } finally {
             fetchProgress();
           }
@@ -224,7 +253,7 @@ export const useVocalLogic = ({ setModalData }) => {
     setAppState((prev) => ({
       ...prev,
       isCollecting: false,
-      currentVowel: null,
+      currentOpbasic: null,
       isPredicting: !prev.isPredicting,
       prediction: "",
       predictionConfidence: null,
@@ -245,27 +274,25 @@ export const useVocalLogic = ({ setModalData }) => {
     appState,
     handleLandmarks,
     handlePredict,
-    startCollecting: (vowel) => {
-      console.log(`Recolectando vocal: ${vowel}`);
+    startCollecting: (opbasic) =>
       setAppState((prev) => ({
         ...prev,
         isCollecting: true,
-        currentVowel: vowel.toLowerCase(),
-        statusMessage: STATUS_MESSAGES.COLLECTING(vowel.toLowerCase()),
-      }));
-    },
+        currentOpbasic: opbasic, // 👈 en humano
+        statusMessage: STATUS_MESSAGES_OPBASICS.COLLECTING(opbasic),
+      })),
     stopCollecting: () =>
       setAppState((prev) => ({
         ...prev,
         isCollecting: false,
-        currentVowel: null,
-        statusMessage: STATUS_MESSAGES.IDLE,
+        currentOpbasic: null,
+        statusMessage: STATUS_MESSAGES_OPBASICS.IDLE,
       })),
     trainModel,
     resetData,
-    deleteVowelData,
+    deleteOpbasicData,
     togglePrediction,
-    VOWELS,
-    SAMPLES_PER_VOWEL,
+    OPBASICS,
+    SAMPLES_PER_OPBASIC,
   };
 };

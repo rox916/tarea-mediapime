@@ -1,0 +1,205 @@
+/* Contenedor principal de la tarjeta de cámara */
+.camera-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Contenedor de la cámara */
+.camera-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* mantiene proporción */
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Video y canvas alineados */
+.camera-feed,
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.canvas-overlay {
+  pointer-events: none;
+}
+
+/* --- BARRA DE PROGRESO --- */
+.progress-container {
+  margin-top: 12px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  height: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2196f3, #4caf50);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #e0e0e0;
+}
+
+/* --- PREDICCIÓN --- */
+.prediction-row {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center; /* centrado debajo de la cámara */
+  align-items: center;
+  gap: 1rem;
+}
+
+.prediction-toggle {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.prediction-toggle.active {
+  background: linear-gradient(135deg, #ef476f, #d62828);
+  color: #fff;
+}
+
+.prediction-toggle:not(.active) {
+  background: linear-gradient(135deg, #06d6a0, #118ab2);
+  color: #fff;
+}
+
+.prediction-display {
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  text-align: center;
+  width: 200px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.prediction-letter {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0.3rem 0;
+  color: #06d6a0;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.4);
+}
+
+.prediction-confidence {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #f4a261;
+  margin-top: 0.3rem;
+}
+
+/* --- FOOTER DENTRO DE LA CÁMARA --- */
+.camera-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between; /* pasos a la izquierda, botones a la derecha */
+  align-items: flex-start;
+  width: 100%;
+  gap: 2rem;
+}
+
+/* --- PASOS DE ENTRENAMIENTO (IZQUIERDA) --- */
+.training-steps {
+  flex: 1;
+  max-width: 280px;
+  font-size: 0.95rem;
+  color: #e0e0e0;
+}
+
+.training-steps h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.training-steps ol {
+  padding-left: 1.2rem;
+}
+
+.training-steps li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* --- BOTONES (DERECHA, VERTICALES) --- */
+.camera-actions {
+  display: flex;
+  flex-direction: column;   /* ✅ apilados en vertical */
+  align-items: flex-end;    /* ✅ pegados a la derecha */
+  gap: 0.8rem;
+  flex: 1;
+}
+
+/* Botones más grandes */
+.camera-actions .action-btn {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  color: #fff;
+  min-width: 200px; /* ancho uniforme */
+  text-align: center;
+}
+
+/* 🎤 Recolectar */
+.camera-actions .collect-btn {
+  background: linear-gradient(135deg, #06d6a0, #118ab2);
+}
+.camera-actions .collect-btn:hover {
+  background: linear-gradient(135deg, #07e0a8, #0f94c2);
+}
+
+/* ⏸️ Detener */
+.camera-actions .stop-btn {
+  background: linear-gradient(135deg, #e63946, #d62828);
+}
+.camera-actions .stop-btn:hover {
+  background: linear-gradient(135deg, #ff6b6b, #d62828);
+}
+
+/* 🧠 Entrenar */
+.camera-actions .train-btn {
+  background: linear-gradient(135deg, #3a86ff, #266dd3);
+}
+.camera-actions .train-btn:hover {
+  background: linear-gradient(135deg, #5cb8ff, #266dd3);
+}
+
+/* 🔄 Reiniciar */
+.camera-actions .reset-btn {
+  background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+.camera-actions .reset-btn:hover {
+  background: linear-gradient(135deg, #2c4db2, #1e40af);
+}

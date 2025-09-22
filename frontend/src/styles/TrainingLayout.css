@@ -1,0 +1,131 @@
+/* ===================== */
+/* Layout General        */
+/* ===================== */
+.training-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #fff;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.training-sidebar {
+  flex: 1;
+  max-width: 280px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.training-sidebar h2 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.training-sidebar ol {
+  padding-left: 1.2rem;
+  line-height: 1.8rem;
+}
+
+/* ===================== */
+/* Cámara                */
+/* ===================== */
+.training-main {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.camera-card {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 900px;
+  width: 100%;
+}
+
+.camera-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 16/9;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-feed,
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* espejo */
+}
+
+.canvas-overlay {
+  pointer-events: none;
+}
+
+/* ===================== */
+/* Botones dentro cámara */
+/* ===================== */
+.camera-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.camera-actions button {
+  padding: 0.7rem 1.4rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.camera-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.camera-actions .btn.primary {
+  background: linear-gradient(135deg, #118ab2, #06d6a0);
+  color: #fff;
+}
+
+.camera-actions .btn.success {
+  background: linear-gradient(135deg, #06d6a0, #07b07e);
+  color: #fff;
+}
+
+.camera-actions .btn.danger {
+  background: linear-gradient(135deg, #ef476f, #d62828);
+  color: #fff;
+}
+
+/* ===================== */
+/* Estado debajo cámara  */
+/* ===================== */
+.status-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+  font-size: 1rem;
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import './VowelControls.css';
 import ActionButtons from "../common/ActionButtons.jsx";
 
-const VOWELS = ['A', 'E', 'I', 'O', 'U'];
+const VOWELS = ['a', 'e', 'i', 'o', 'u'];   // 👈 ahora minúsculas
 const SAMPLES_PER_VOWEL = 100;
 
 const VowelControls = ({ 
@@ -13,7 +13,7 @@ const VowelControls = ({
   stopCollecting,
   deleteVowelData,
   // props para ActionButtons
-  canTrain,       // ✅ viene como función desde useVocalLogic
+  canTrain,
   isTraining,
   trainModel,
   resetData
@@ -30,7 +30,7 @@ const VowelControls = ({
         return (
           <div key={vowel} className="vowel-item">
             <div className="vowel-header">
-              <span className="vowel-label">Vocal '{vowel}'</span>
+              <span className="vowel-label">Vocal '{vowel.toUpperCase()}'</span>
               <span className="sample-count">
                 {count}/{SAMPLES_PER_VOWEL}
                 {isComplete && ' ✅'}
@@ -56,10 +56,10 @@ const VowelControls = ({
               disabled={isComplete}
             >
               {isComplete
-                ? `Vocal '${vowel}' Completa`
+                ? `Vocal '${vowel.toUpperCase()}' Completa`
                 : isCurrentlyCollecting
-                  ? `Detener Recolección '${vowel}'`
-                  : `Recolectar '${vowel}' (${count}/${SAMPLES_PER_VOWEL})`}
+                  ? `Detener Recolección '${vowel.toUpperCase()}'`
+                  : `Recolectar '${vowel.toUpperCase()}' (${count}/${SAMPLES_PER_VOWEL})`}
             </button>
             
             {count > 0 && (
@@ -67,9 +67,9 @@ const VowelControls = ({
                 className="delete-btn"
                 onClick={() => deleteVowelData(vowel)}
                 disabled={isCurrentlyCollecting && !isComplete}  
-                title={`Eliminar datos de la vocal '${vowel}'`}
+                title={`Eliminar datos de la vocal '${vowel.toUpperCase()}'`}
               >
-                🗑️ Eliminar '{vowel}'
+                🗑️ Eliminar '{vowel.toUpperCase()}'
               </button>
             )}
           </div>

@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom"; // ← Importa Link
+import { Link } from "react-router-dom"; 
 
 export default function TrainingAlgorithmsBasic() {
   const opbasic = [
-    { name: "Multiplicación", key: "multipl", icon: "✖️" },
+    { name: "Multiplicación", key: "multiplicacion", icon: "✖️" }, // 👈 corregido
     { name: "División", key: "division", icon: "➗" },
     { name: "Resta", key: "menos", icon: "➖" },
     { name: "Suma", key: "mas", icon: "➕" },
@@ -14,7 +14,9 @@ export default function TrainingAlgorithmsBasic() {
       <p>Aquí podrás entrenar modelos para:</p>
       <ul style={{ listStyle: "none", padding: 0 }}>
         {opbasic.map((op) => (
-          <li key={op.key}>{op.icon} {op.name}</li>
+          <li key={op.key}>
+            {op.icon} {op.name}
+          </li>
         ))}
       </ul>
       <div style={{ marginTop: "2rem" }}>

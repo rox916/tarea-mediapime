@@ -79,7 +79,7 @@ export default function SingleVowelControls({
       <div className="action-buttons-wrapper">
         <ActionButtons
           isCollecting={isCollecting}
-          canTrain={canTrain()}
+          canTrain={canTrain}   // ✅ ya es un booleano
           isTraining={isTraining}
           stopCollecting={stopCollecting}
           trainModel={trainModel}

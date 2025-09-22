@@ -1,5 +1,5 @@
 import React from 'react';
-import "./SummaryInfo.css";
+import "../../styles/SummaryInfo.css";
 
 const SummaryInfo = ({ getTotalSamples, getRequiredSamples }) => {
   const total = getTotalSamples();

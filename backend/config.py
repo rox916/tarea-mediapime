@@ -2,9 +2,9 @@
 
 # Definición de todas las clases organizadas por categoría
 CLASES_DISPONIBLES = {
-    'vocales': ['a', 'e', 'i', 'o', 'u'],
-    'numeros': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-    'operaciones': ['+', '-', '*', '/']
+    "vocales": ["a", "e", "i", "o", "u"],
+    "numeros": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "operaciones": ["mas", "menos", "multiplicacion", "division"],  # 👈 nombres humanos
 }
 
 # Lista plana de todas las clases para validación
@@ -18,20 +18,28 @@ for categoria, clases in CLASES_DISPONIBLES.items():
     for clase in clases:
         CLASE_A_CATEGORIA[clase] = categoria
 
+# 🔄 Mapeo de operaciones (nombre humano → símbolo)
+MAPEO_OPS = {
+    "mas": "+",
+    "menos": "-",
+    "multiplicacion": "*",
+    "division": "/",
+}
+
 # Configuración de datos
 DATOS_CONFIG = {
-    'samples_minimos': 2,
-    'samples_recomendados': 100,
-    'samples_maximos': 100
+    "samples_minimos": 2,
+    "samples_recomendados": 100,
+    "samples_maximos": 100,
 }
 
 # Rutas de directorios
 RUTAS = {
-    'data_base': 'backend/data',
-    'models_base': 'backend/models_trained',
-    'data_vocales': 'backend/data/vocales',
-    'data_numeros': 'backend/data/numeros', 
-    'data_operaciones': 'backend/data/operaciones'
+    "data_base": "backend/data",
+    "models_base": "backend/models_trained",
+    "data_vocales": "backend/data/vocales",
+    "data_numeros": "backend/data/numeros",
+    "data_operaciones": "backend/data/operaciones",
 }
 
 def obtener_ruta_datos(clase):
