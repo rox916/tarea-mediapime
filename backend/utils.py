@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 MAX_MUESTRAS = 100
 MIN_MUESTRAS_ENTRENAMIENTO = 10
 DIR_DATOS = "data"
-DIR_MODELOS = "models"
+DIR_MODELOS = "backend/models_trained"
 
 def crear_directorios():
     """Crea los directorios necesarios para el almacenamiento de datos y modelos."""
