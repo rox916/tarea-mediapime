@@ -4,7 +4,7 @@ import os
 
 from config import (
     CLASES_DISPONIBLES, TODAS_LAS_CLASES, CLASE_A_CATEGORIA, DATOS_CONFIG,
-    obtener_ruta_datos, obtener_ruta_modelo
+    obtener_ruta_datos, obtener_ruta_modelo, MAPEO_OPS  # 👈 importamos el mapa
 )
 
 # Crear el router para rutas generales
@@ -148,7 +148,8 @@ async def obtener_configuracion():
         "configuracion": DATOS_CONFIG,
         "clases_disponibles": CLASES_DISPONIBLES,
         "todas_las_clases": TODAS_LAS_CLASES,
-        "mapeo_categorias": CLASE_A_CATEGORIA
+        "mapeo_categorias": CLASE_A_CATEGORIA,
+        "mapeo_operaciones": MAPEO_OPS  # 👈 añadimos el mapa aquí
     }
 
 @router.get("/clases")

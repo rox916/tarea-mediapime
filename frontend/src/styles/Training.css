@@ -1,0 +1,86 @@
+/* Contenedor general */
+.training-container {
+  display: block;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 0 2rem 4rem 2rem;
+  background: #e6f7ff;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card principal */
+.training-card {
+  background: #fff;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-width: 950px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Título */
+.training-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+
+/* Subtítulo */
+.training-subtitle {
+  font-size: 1.1rem;
+  color: #444;
+  margin-bottom: 2.5rem;
+}
+
+/* Grid de opciones */
+.training-grid {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Opciones tipo tarjeta */
+.training-option {
+  background: linear-gradient(135deg, #06d6a0, #118ab2);
+  color: white;
+  border-radius: 16px;
+  width: 180px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+}
+
+.training-option:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(17, 138, 178, 0.5);
+}
+
+.training-option .icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.6rem;
+}
+
+/* Footer */
+.training-footer {
+  margin-top: 2rem;
+  font-size: 1rem;
+  color: #333;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 215, 64, 0.15);
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}

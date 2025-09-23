@@ -9,7 +9,8 @@ import re
 
 from config import (
     CLASES_DISPONIBLES, TODAS_LAS_CLASES, CLASE_A_CATEGORIA, DATOS_CONFIG,
-    obtener_ruta_datos, obtener_ruta_modelo, obtener_ruta_encoder, validar_clase
+    obtener_ruta_datos, obtener_ruta_modelo, obtener_ruta_encoder, validar_clase,
+    MAPEO_OPS   # 👈 importamos el mapa humano → símbolo
 )
 from models import entrenar_modelo_clase, predecir_clase, eliminar_modelo_clase
 from utils import validar_puntos_clave
@@ -129,15 +130,18 @@ def obtener_estadisticas_operacion(clase: str):
 
 def evaluar_expresion_matematica(expresion: str):
     """Evalúa una expresión matemática de forma segura."""
-    # Limpiar la expresión
+
+    # Reemplazar nombres humanos por símbolos (+, -, *, /)
+    for humano, simbolo in MAPEO_OPS.items():
+        expresion = expresion.replace(humano, simbolo)
+
     expresion = expresion.strip()
-    
+
     # Validar que solo contenga números, operadores y espacios
     patron_valido = r'^[0-9+\-*/().\s]+$'
     if not re.match(patron_valido, expresion):
         raise ValueError("Expresión contiene caracteres no válidos")
     
-    # Evaluar de forma segura
     try:
         resultado = eval(expresion)
         return {
@@ -162,14 +166,12 @@ async def recolectar_muestra_operacion(
 ):
     """Recolecta una muestra para una operación específica."""
     
-    # Validar que sea una operación válida
     if operacion not in CLASES_DISPONIBLES['operaciones']:
         raise HTTPException(
             status_code=400, 
             detail=f"Operación '{operacion}' no válida. Operaciones disponibles: {CLASES_DISPONIBLES['operaciones']}"
         )
     
-    # Verificar si ya se alcanzó el límite de 100 muestras
     estadisticas_actuales = obtener_estadisticas_operacion(operacion)
     muestras_en_cola = len(cola_muestras_operaciones.get(operacion, []))
     total_actual = estadisticas_actuales['total_muestras'] + muestras_en_cola
@@ -185,21 +187,17 @@ async def recolectar_muestra_operacion(
             "estadisticas": estadisticas_actuales
         }
     
-    # Validar puntos clave
     if not validar_puntos_clave(datos.puntos_clave):
         raise HTTPException(
             status_code=400, 
             detail="Puntos clave inválidos"
         )
     
-    # Inicializar cola si es necesario
     inicializar_cola_operacion(operacion)
     
-    # Agregar timestamp si no se proporciona
     if not datos.fecha_hora:
         datos.fecha_hora = datetime.now().isoformat()
     
-    # Agregar muestra a la cola
     muestra = {
         "landmarks": datos.puntos_clave,
         "timestamp": datos.fecha_hora,
@@ -207,14 +205,11 @@ async def recolectar_muestra_operacion(
     }
     
     cola_muestras_operaciones[operacion].append(muestra)
-    
-    # Programar guardado en segundo plano
     tareas_fondo.add_task(tarea_guardar_cola_operacion_en_disco, operacion)
     
     estadisticas = obtener_estadisticas_operacion(operacion)
     nuevo_total = estadisticas['total_muestras'] + len(cola_muestras_operaciones[operacion])
     
-    # Verificar si acabamos de completar las 100 muestras
     recoleccion_completa = nuevo_total >= DATOS_CONFIG['samples_recomendados']
     
     return {
@@ -232,24 +227,16 @@ async def recolectar_muestra_operacion(
 
 @router.get("/estadisticas/{operacion}")
 async def obtener_estadisticas_operacion_endpoint(operacion: str):
-    """Obtiene estadísticas detalladas de una operación específica."""
-    
     if operacion not in CLASES_DISPONIBLES['operaciones']:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Operación '{operacion}' no válida"
-        )
+        raise HTTPException(status_code=400, detail=f"Operación '{operacion}' no válida")
     
     estadisticas = obtener_estadisticas_operacion(operacion)
     estadisticas['operacion'] = operacion
     estadisticas['categoria'] = "operaciones"
-    
     return estadisticas
 
 @router.get("/estadisticas")
 async def obtener_estadisticas_operaciones():
-    """Obtiene estadísticas de todas las operaciones."""
-    
     estadisticas_operaciones = {}
     operaciones_completas = 0
     total_muestras = 0
@@ -277,15 +264,9 @@ async def obtener_estadisticas_operaciones():
 
 @router.post("/entrenar/{operacion}")
 async def entrenar_modelo_operacion(operacion: str):
-    """Entrena el modelo para una operación específica."""
-    
     if operacion not in CLASES_DISPONIBLES['operaciones']:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Operación '{operacion}' no válida"
-        )
+        raise HTTPException(status_code=400, detail=f"Operación '{operacion}' no válida")
     
-    # Verificar datos suficientes
     estadisticas = obtener_estadisticas_operacion(operacion)
     if not estadisticas['puede_entrenar']:
         raise HTTPException(
@@ -306,21 +287,12 @@ async def entrenar_modelo_operacion(operacion: str):
 
 @router.post("/prediccion/{operacion}")
 async def predecir_operacion(operacion: str, datos: SolicitudPrediccion):
-    """Realiza predicción para una operación específica."""
-    
     if operacion not in CLASES_DISPONIBLES['operaciones']:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Operación '{operacion}' no válida"
-        )
+        raise HTTPException(status_code=400, detail=f"Operación '{operacion}' no válida")
     
-    # Verificar si existe modelo entrenado
     ruta_modelo = obtener_ruta_modelo(operacion)
     if not os.path.exists(ruta_modelo):
-        raise HTTPException(
-            status_code=400,
-            detail=f"No hay modelo entrenado para la operación '{operacion}'"
-        )
+        raise HTTPException(status_code=400, detail=f"No hay modelo entrenado para la operación '{operacion}'")
     
     try:
         resultado = await predecir_clase(operacion, datos.puntos_clave)
@@ -334,25 +306,16 @@ async def predecir_operacion(operacion: str, datos: SolicitudPrediccion):
 
 @router.post("/expresion_matematica")
 async def evaluar_expresion(datos: ExpresionMatematica):
-    """Evalúa una expresión matemática."""
     try:
         resultado = evaluar_expresion_matematica(datos.expresion)
         return resultado
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Error evaluando expresión: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Error evaluando expresión: {str(e)}")
 
 @router.delete("/datos/{operacion}")
 async def eliminar_datos_operacion(operacion: str):
-    """Elimina todos los datos de una operación específica."""
-    
     if operacion not in CLASES_DISPONIBLES['operaciones']:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Operación '{operacion}' no válida"
-        )
+        raise HTTPException(status_code=400, detail=f"Operación '{operacion}' no válida")
     
     ruta_archivo = obtener_ruta_datos(operacion)
     
@@ -363,23 +326,14 @@ async def eliminar_datos_operacion(operacion: str):
         else:
             mensaje = f"No había datos para la operación '{operacion}'"
         
-        return {
-            "mensaje": mensaje,
-            "operacion": operacion,
-            "categoria": "operaciones"
-        }
+        return {"mensaje": mensaje, "operacion": operacion, "categoria": "operaciones"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error eliminando datos: {str(e)}")
 
 @router.delete("/modelo/{operacion}")
 async def eliminar_modelo_operacion(operacion: str):
-    """Elimina el modelo entrenado de una operación específica."""
-    
     if operacion not in CLASES_DISPONIBLES['operaciones']:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Operación '{operacion}' no válida"
-        )
+        raise HTTPException(status_code=400, detail=f"Operación '{operacion}' no válida")
     
     try:
         resultado = await eliminar_modelo_clase(operacion)
@@ -394,7 +348,6 @@ async def eliminar_modelo_operacion(operacion: str):
 
 @router.get("/")
 async def listar_operaciones():
-    """Lista todas las operaciones disponibles."""
     return {
         "operaciones": CLASES_DISPONIBLES['operaciones'],
         "total": len(CLASES_DISPONIBLES['operaciones']),

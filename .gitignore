@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 *.pyo
 .venv
+temp_auto_push.bat
+temp_interactive_push.bat

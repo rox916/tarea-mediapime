@@ -1,80 +1,187 @@
-import axios from 'axios';
+// src/services/api.js
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = "http://localhost:8001/api";
 
 export const apiService = {
-  // Obtener progreso de recolección
-  async getProgress() {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/progress`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching progress:', error);
-      throw error;
-    }
+  // ================= VOCAL =================
+  async getVowelProgress() {
+    const response = await axios.get(`${API_BASE_URL}/vocales/estadisticas`);
+    return response.data;
   },
 
-  // Enviar landmarks para una vocal
-  async sendLandmarks(landmarks, vowel) {
-    try {
-      const landmarkData = landmarks.map(point => [point.x, point.y, point.z]);
-      await axios.post(`${API_BASE_URL}/samples`, {
-        puntos_clave: landmarkData,
-        vocal: vowel
-      });
-    } catch (error) {
-      console.error('Error sending landmarks:', error);
-      throw error;
-    }
+  async sendVowelLandmarks(landmarks, vowel) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    await axios.post(
+      `${API_BASE_URL}/vocales/recolectar/${vowel.toLowerCase()}`,
+      { puntos_clave: landmarkData }
+    );
   },
 
-  // Predecir vocal basada en landmarks
-  async predictVowel(landmarks) {
-    try {
-      const landmarkData = landmarks.map(point => [point.x, point.y, point.z]);
-      const response = await axios.post(`${API_BASE_URL}/predict`, {
-        puntos_clave: landmarkData
-      });
-      return {
-        prediction: response.data.prediccion,
-        confidence: response.data.confianza,
-        allProbabilities: response.data.todas_las_probabilidades
-      };
-    } catch (error) {
-      console.error('Error predicting vowel:', error);
-      throw error;
-    }
+  // 🔹 Predicción para una vocal específica
+  async predictVowel(landmarks, vowel) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    const response = await axios.post(
+      `${API_BASE_URL}/vocales/prediccion/${vowel.toLowerCase()}`,
+      { puntos_clave: landmarkData }
+    );
+
+    console.log("📡 predictVowel response:", response.data);
+
+    const pred = response.data.prediccion || {};
+    return {
+      prediction: pred.clase_predicha || null,
+      confidence: pred.confianza ?? null,
+      allProbabilities: pred.todas_las_probabilidades || null,
+    };
   },
 
-  // Entrenar el modelo
-  async trainModel() {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/train`);
-      return response.data;
-    } catch (error) {
-      console.error('Error training model:', error);
-      throw error;
-    }
+  // 🔹 Predicción general (el backend decide la vocal)
+  async predictVowelGeneral(landmarks) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    const response = await axios.post(
+      `${API_BASE_URL}/vocales/prediccion`,
+      { puntos_clave: landmarkData }
+    );
+
+    console.log("📡 predictVowelGeneral response:", response.data);
+
+    const pred = response.data.prediccion || {};
+    return {
+      prediction: pred.clase_predicha || null,
+      confidence: pred.confianza ?? null,
+      allProbabilities: pred.todas_las_probabilidades || null,
+    };
   },
 
-  // Reiniciar datos
-  async resetData() {
-    try {
-      await axios.post(`${API_BASE_URL}/reset`);
-    } catch (error) {
-      console.error('Error resetting data:', error);
-      throw error;
-    }
+  async trainVowel(vowel) {
+    const response = await axios.post(
+      `${API_BASE_URL}/vocales/entrenar/${vowel.toLowerCase()}`
+    );
+    const data = response.data;
+
+    return {
+      success: data.resultado?.exito ?? false,
+      accuracy: data.resultado?.precision_validacion ?? 0,
+      loss: data.resultado?.perdida_validacion ?? null,
+      epochs: data.resultado?.epocas ?? null,
+      raw: data,
+    };
   },
 
-  // Eliminar datos de una vocal específica
   async deleteVowelData(vowel) {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/samples/${vowel}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error deleting data for vowel ${vowel}:`, error);
-      throw error;
-    }
-  }
+    const response = await axios.delete(
+      `${API_BASE_URL}/vocales/datos/${vowel.toLowerCase()}`
+    );
+    return response.data;
+  },
+
+  async resetVowelModel(vowel) {
+    const response = await axios.delete(
+      `${API_BASE_URL}/vocales/modelo/${vowel.toLowerCase()}`
+    );
+    return response.data;
+  },
+
+  // ================= NUMBERS =================
+  async getNumberProgress() {
+    const response = await axios.get(`${API_BASE_URL}/numeros/estadisticas`);
+    return response.data;
+  },
+
+  async sendNumberLandmarks(landmarks, number) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    await axios.post(`${API_BASE_URL}/numeros/recolectar/${number}`, {
+      puntos_clave: landmarkData,
+    });
+  },
+
+  async predictNumber(landmarks, number) {
+    const landmarkData = landmarks.map((point) => [point.x, point.y, point.z]);
+    const response = await axios.post(
+      `${API_BASE_URL}/numeros/prediccion/${number}`,
+      { puntos_clave: landmarkData }
+    );
+
+    console.log("📡 predictNumber response:", response.data);
+
+    const pred = response.data.prediccion || {};
+    return {
+      prediction: pred.clase_predicha || null,
+      confidence: pred.confianza ?? null,
+      allProbabilities: pred.todas_las_probabilidades || null,
+    };
+  },
+
+  async trainNumber(number) {
+    const response = await axios.post(
+      `${API_BASE_URL}/numeros/entrenar/${number}`
+    );
+    return response.data;
+  },
+
+  async deleteNumberData(number) {
+    const response = await axios.delete(
+      `${API_BASE_URL}/numeros/datos/${number}`
+    );
+    return response.data;
+  },
+
+  async resetNumberModel(number) {
+    const response = await axios.delete(
+      `${API_BASE_URL}/numeros/modelo/${number}`
+    );
+    return response.data;
+  },
+
+  // ================= OPERACIONES =================
+  async getOpbasicProgress() {
+    const response = await axios.get(
+      `${API_BASE_URL}/operaciones/estadisticas`
+    );
+    return response.data;
+  },
+
+  async sendOpbasicLandmarks(landmarks, op) {
+    await axios.post(`${API_BASE_URL}/operaciones/recolectar/${op}`, {
+      puntos_clave: landmarks,
+    });
+  },
+
+  async predictOpbasic(landmarks, op) {
+    const response = await axios.post(
+      `${API_BASE_URL}/operaciones/prediccion/${op}`,
+      { puntos_clave: landmarks }
+    );
+
+    console.log("📡 predictOpbasic response:", response.data);
+
+    const pred = response.data.prediccion || {};
+    return {
+      prediction: pred.clase_predicha || null,
+      confidence: pred.confianza ?? null,
+      allProbabilities: pred.todas_las_probabilidades || null,
+    };
+  },
+
+  async trainOpbasic(op) {
+    const response = await axios.post(
+      `${API_BASE_URL}/operaciones/entrenar/${op}`
+    );
+    return response.data;
+  },
+
+  async deleteOpbasicData(op) {
+    const response = await axios.delete(
+      `${API_BASE_URL}/operaciones/datos/${op}`
+    );
+    return response.data;
+  },
+
+  async resetOpbasicModel(op) {
+    const response = await axios.delete(
+      `${API_BASE_URL}/operaciones/modelo/${op}`
+    );
+    return response.data;
+  },
 };
