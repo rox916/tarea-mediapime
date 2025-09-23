@@ -11,6 +11,9 @@
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* ===================== */
+/* Sidebar opcional       */
+/* ===================== */
 .training-sidebar {
   flex: 1;
   max-width: 280px;
@@ -31,49 +34,41 @@
 }
 
 /* ===================== */
-/* Cámara                */
+/* Main (centro cámara)  */
 /* ===================== */
 .training-main {
   flex: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center; 
+  min-height: 100vh;
+  width: 100%;
+  padding: 0 2rem; /* 👉 margen lateral pequeño */
+  box-sizing: border-box;
 }
 
+/* ===================== */
+/* Cámara                */
+/* ===================== */
 .camera-card {
   background: rgba(255, 255, 255, 0.08);
   padding: 1.5rem;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   text-align: center;
-  max-width: 900px;
   width: 100%;
+  max-width: 100%;   /* 🔥 sin límite */
 }
 
 .camera-container {
   position: relative;
   width: 100%;
-  max-width: 800px;
+  max-width: none;   /* 🔥 sin límite de 800px */
   aspect-ratio: 16/9;
-  margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
   background: #000;
-}
-
-.camera-feed,
-.canvas-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1); /* espejo */
-}
-
-.canvas-overlay {
-  pointer-events: none;
 }
 
 /* ===================== */

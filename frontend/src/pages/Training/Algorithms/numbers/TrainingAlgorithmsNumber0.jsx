@@ -1,5 +1,5 @@
 // src/pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useNumberLogic } from "../../../../hooks/useNumberLogic.js";
 
@@ -44,6 +44,14 @@ export default function TrainingAlgorithmsNumber0() {
 
   // Progreso actual del número 0
   const progress = appState.numberProgress?.[label]?.percentage || 0;
+
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progress >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado para '0', deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progress, appState.isCollecting, stopCollecting]);
 
   const actionsSlot = (
     <>

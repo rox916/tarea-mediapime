@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useVocalLogic } from "../../../../hooks/useVocalLogic.js";
 
@@ -26,6 +26,9 @@ export default function TrainingWordVowelE() {
     handlePredict,
   } = useVocalLogic({ setModalData });
 
+  // progreso actual de la vocal E
+  const progressE = appState.vowelProgress?.e?.percentage || 0;
+
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
   const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
@@ -34,14 +37,20 @@ export default function TrainingWordVowelE() {
     currentVowel: appState.currentVowel,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
+    vowelProgress: appState.vowelProgress,
     onLandmarks: handleLandmarks,
     onPredict: handlePredict,
   });
 
-  // progreso actual de la vocal E
-  const progressE = appState.vowelProgress?.e?.percentage || 0;
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progressE >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressE, appState.isCollecting, stopCollecting]);
 
-  // 👉 Botones dentro de CameraSection
+  // --- Funciones para los botones de la cámara ---
   const actionsSlot = (
     <>
       {appState.isCollecting && progressE < 100 ? (
@@ -60,7 +69,7 @@ export default function TrainingWordVowelE() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel("e")} // 👈 Entrena solo la 'e'
+        onClick={() => trainModel("e")}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo 'E'"}
@@ -82,7 +91,6 @@ export default function TrainingWordVowelE() {
             isInitialized={isInitialized}
             error={error}
             actionsSlot={actionsSlot}
-            // 👇 Progreso específico de la vocal 'e'
             progress={progressE}
           />
         </div>

@@ -1,5 +1,5 @@
 // src/pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicDivision.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useOpbasicLogic } from "../../../../hooks/useOpbasicLogic.js";
 
@@ -27,6 +27,9 @@ export default function TrainingAlgorithmsBasicDivision() {
     handlePredict,
   } = useOpbasicLogic({ setModalData });
 
+  // 👈 usamos directamente "division" (nombre humano esperado por el backend)
+  const label = "division";
+
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
   const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
@@ -35,12 +38,20 @@ export default function TrainingAlgorithmsBasicDivision() {
     currentOpbasic: appState.currentOpbasic,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
-    onLandmarks: (landmarks) => handleLandmarks(landmarks, "division"), // fijo
-    onPredict: (landmarks) => handlePredict(landmarks, "division"),     // fijo
+    onLandmarks: (landmarks) => handleLandmarks(landmarks, label),
+    onPredict: (landmarks) => handlePredict(landmarks, label),
   });
 
   // progreso actual de división
   const progressDivision = appState.opbasicProgress?.division?.percentage || 0;
+
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progressDivision >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressDivision, appState.isCollecting, stopCollecting]);
 
   // 👉 Botones dentro de CameraSection
   const actionsSlot = (
@@ -52,7 +63,7 @@ export default function TrainingAlgorithmsBasicDivision() {
       ) : (
         <button
           className="action-btn collect-btn"
-          onClick={() => startCollecting("division")}
+          onClick={() => startCollecting(label)}
           disabled={progressDivision >= 100}
         >
           🎤 Recolectar 'División'
@@ -61,16 +72,13 @@ export default function TrainingAlgorithmsBasicDivision() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel("division")}
+        onClick={() => trainModel(label)}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
       </button>
 
-      <button
-        className="action-btn reset-btn"
-        onClick={() => resetData("division")}
-      >
+      <button className="action-btn reset-btn" onClick={() => resetData(label)}>
         🔄 Reiniciar Datos
       </button>
     </>
@@ -86,7 +94,7 @@ export default function TrainingAlgorithmsBasicDivision() {
             isInitialized={isInitialized}
             error={error}
             actionsSlot={actionsSlot}
-            // 👇 Progreso específico de división
+            // 👇 progreso específico de división
             progress={progressDivision}
           />
         </div>

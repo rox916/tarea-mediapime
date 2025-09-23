@@ -86,31 +86,61 @@ export const useOpbasicLogic = ({ setModalData }) => {
   }, []);
 
   // --- Guardar landmarks ---
-const handleLandmarks = useCallback(
-  async (landmarks, opbasic) => {
-    if (!appState.isCollecting) return;
+  const handleLandmarks = useCallback(
+    async (landmarks, opbasic) => {
+      setAppState((prev) => {
+        if (!prev.isCollecting) return prev;
 
-    const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
-    if (!label) return;
+        const label = opbasic || prev.currentOpbasic;
+        if (!label) return prev;
 
-    try {
-      // 🔹 Convertimos {x, y, z} en [x, y, z] (igual que en vocales)
-      const formattedLandmarks = landmarks.map((p) => [p.x, p.y, p.z]);
+        // 🔎 Verificar si ya alcanzó 100%
+        const progress = prev.opbasicProgress?.[label]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⚠️ La operación '${label}' ya alcanzó el 100%, auto-stop.`);
+          return {
+            ...prev,
+            isCollecting: false,
+            currentOpbasic: null,
+            statusMessage: `La operación '${label}' ya completó la recolección.`,
+          };
+        }
 
-      console.log(`Recolectando puntos clave para la operación ${label}:`, formattedLandmarks);
+        // seguimos recolectando → enviamos async sin bloquear el return
+        const formattedLandmarks = landmarks.map((p) => [p.x, p.y, p.z]);
+        apiService
+          .sendOpbasicLandmarks(formattedLandmarks, label)
+          .then(() => fetchProgress())
+          .catch((error) => console.error("Error al agregar muestra:", error));
 
-      // 🔹 Mandamos al backend
-      await apiService.sendOpbasicLandmarks(formattedLandmarks, label);
+        // actualización rápida local
+        const current = prev.opbasicProgress[label] || {
+          count: 0,
+          max: SAMPLES_PER_OPBASIC,
+          percentage: 0,
+        };
 
-      // 🔹 Actualizamos progreso
-      await fetchProgress();
-    } catch (error) {
-      console.error("Error al agregar muestra:", error);
-    }
-  },
-  [appState.isCollecting, appState.currentOpbasic, fetchProgress]
-);
+        const newCount = current.count + 1;
+        const newPercentage = Math.min(
+          100,
+          (newCount / (current.max || SAMPLES_PER_OPBASIC)) * 100
+        );
 
+        return {
+          ...prev,
+          opbasicProgress: {
+            ...prev.opbasicProgress,
+            [label]: {
+              ...current,
+              count: newCount,
+              percentage: newPercentage,
+            },
+          },
+        };
+      });
+    },
+    [fetchProgress]
+  );
 
   // --- Predicción con throttling ---
   const lastPredictionTime = useRef(0);
@@ -128,7 +158,7 @@ const handleLandmarks = useCallback(
       lastPredictionTime.current = now;
 
       try {
-        const label = opbasic || appState.currentOpbasic; // 👈 siempre nombre humano
+        const label = opbasic || appState.currentOpbasic;
         if (!label) return;
 
         const result = await apiService.predictOpbasic(landmarks, label);
@@ -191,9 +221,7 @@ const handleLandmarks = useCallback(
         message: `¿Seguro que quieres borrar todos los datos y el modelo de '${opbasic}'?`,
         onConfirm: async () => {
           try {
-            // 🗑️ Borrar datos de la operación (elimina *_samples.json)
             await apiService.deleteOpbasicData(opbasic);
-            // 🔄 Resetear modelo de la operación (elimina *_model.h5)
             await apiService.resetOpbasicModel(opbasic);
 
             setAppState((prev) => ({
@@ -216,7 +244,6 @@ const handleLandmarks = useCallback(
     },
     [fetchProgress, setModalData]
   );
-
 
   // --- Eliminar datos ---
   const deleteOpbasicData = useCallback(
@@ -273,12 +300,19 @@ const handleLandmarks = useCallback(
     handleLandmarks,
     handlePredict,
     startCollecting: (opbasic) =>
-      setAppState((prev) => ({
-        ...prev,
-        isCollecting: true,
-        currentOpbasic: opbasic, // 👈 en humano
-        statusMessage: STATUS_MESSAGES_OPBASICS.COLLECTING(opbasic),
-      })),
+      setAppState((prev) => {
+        const progress = prev.opbasicProgress?.[opbasic]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⛔ No se puede recolectar '${opbasic}', ya está al 100%.`);
+          return prev;
+        }
+        return {
+          ...prev,
+          isCollecting: true,
+          currentOpbasic: opbasic,
+          statusMessage: STATUS_MESSAGES_OPBASICS.COLLECTING(opbasic),
+        };
+      }),
     stopCollecting: () =>
       setAppState((prev) => ({
         ...prev,

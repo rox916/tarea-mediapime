@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
+// Layout
+import Dashboard from "./components/layout/Dashboard.jsx";
+
 // Home
 import Home from "./pages/Home/Home.jsx";
 
@@ -14,6 +17,7 @@ import TrainingWordsVowels from "./pages/Training/Words/Vowels/TrainingWordsVowe
 import TrainingWordsThings from "./pages/Training/Words/TrainingWordsThings.jsx";
 
 // Training - Numeros individuales
+import TrainingAlgorithmsNumber0 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx";
 import TrainingAlgorithmsNumber1 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber1.jsx";
 import TrainingAlgorithmsNumber2 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber2.jsx";
 import TrainingAlgorithmsNumber3 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber3.jsx";
@@ -23,9 +27,8 @@ import TrainingAlgorithmsNumber6 from "./pages/Training/Algorithms/numbers/Train
 import TrainingAlgorithmsNumber7 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber7.jsx";
 import TrainingAlgorithmsNumber8 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber8.jsx";
 import TrainingAlgorithmsNumber9 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber9.jsx";
-import TrainingAlgorithmsNumber0 from "./pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx";
 
-// Training - operaciones individuales
+// Training - Operaciones básicas
 import TrainingAlgorithmsBasicMas from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx";
 import TrainingAlgorithmsBasicMenos from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx";
 import TrainingAlgorithmsBasicMultipl from "./pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx";
@@ -48,52 +51,53 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Home */}
-        <Route path="/" element={<Home />} />
+        {/* Dashboard envuelve todas las páginas */}
+        <Route path="/" element={<Dashboard />}>
+          {/* Home */}
+          <Route index element={<Home />} />
 
-        {/* Training */}
-        <Route path="/training" element={<Training />} />
+          {/* Training */}
+          <Route path="training" element={<Training />} />
+          <Route path="training/algorithms" element={<TrainingAlgorithms />} />
+          <Route path="training/algorithms/opbasic" element={<TrainingAlgorithmsBasic />} />
+          <Route path="training/algorithms/numbers" element={<TrainingAlgorithmsNumbers />} />
 
-        {/* Training → Algorithms */}
-        <Route path="/training/algorithms" element={<TrainingAlgorithms />} />
-        <Route path="/training/algorithms/opbasic" element={<TrainingAlgorithmsBasic />} />
-        <Route path="/training/algorithms/numbers" element={<TrainingAlgorithmsNumbers />} />
+          {/* Training → Algorithms → numbers */}
+          <Route path="training/algorithms/numbers/0" element={<TrainingAlgorithmsNumber0 />} />
+          <Route path="training/algorithms/numbers/1" element={<TrainingAlgorithmsNumber1 />} />
+          <Route path="training/algorithms/numbers/2" element={<TrainingAlgorithmsNumber2 />} />
+          <Route path="training/algorithms/numbers/3" element={<TrainingAlgorithmsNumber3 />} />
+          <Route path="training/algorithms/numbers/4" element={<TrainingAlgorithmsNumber4 />} />
+          <Route path="training/algorithms/numbers/5" element={<TrainingAlgorithmsNumber5 />} />
+          <Route path="training/algorithms/numbers/6" element={<TrainingAlgorithmsNumber6 />} />
+          <Route path="training/algorithms/numbers/7" element={<TrainingAlgorithmsNumber7 />} />
+          <Route path="training/algorithms/numbers/8" element={<TrainingAlgorithmsNumber8 />} />
+          <Route path="training/algorithms/numbers/9" element={<TrainingAlgorithmsNumber9 />} />
 
-        {/* Training → Algorithms → numbers */}
-        <Route path="/training/algorithms/numbers/1" element={<TrainingAlgorithmsNumber1 />} />
-        <Route path="/training/algorithms/numbers/2" element={<TrainingAlgorithmsNumber2 />} />
-        <Route path="/training/algorithms/numbers/3" element={<TrainingAlgorithmsNumber3 />} />
-        <Route path="/training/algorithms/numbers/4" element={<TrainingAlgorithmsNumber4 />} />
-        <Route path="/training/algorithms/numbers/5" element={<TrainingAlgorithmsNumber5 />} />
-        <Route path="/training/algorithms/numbers/6" element={<TrainingAlgorithmsNumber6 />} />
-        <Route path="/training/algorithms/numbers/7" element={<TrainingAlgorithmsNumber7 />} />
-        <Route path="/training/algorithms/numbers/8" element={<TrainingAlgorithmsNumber8 />} />
-        <Route path="/training/algorithms/numbers/9" element={<TrainingAlgorithmsNumber9 />} />
-        <Route path="/training/algorithms/numbers/0" element={<TrainingAlgorithmsNumber0 />} />
+          {/* Training → Algorithms → opbasic */}
+          <Route path="training/algorithms/opbasic/mas" element={<TrainingAlgorithmsBasicMas />} />
+          <Route path="training/algorithms/opbasic/menos" element={<TrainingAlgorithmsBasicMenos />} />
+          <Route path="training/algorithms/opbasic/multiplicacion" element={<TrainingAlgorithmsBasicMultipl />} />
+          <Route path="training/algorithms/opbasic/division" element={<TrainingAlgorithmsBasicDivision />} />
 
-        {/* Training → Algorithms → opbasic */}
-        <Route path="/training/algorithms/opbasic/mas" element={<TrainingAlgorithmsBasicMas />} />
-        <Route path="/training/algorithms/opbasic/menos" element={<TrainingAlgorithmsBasicMenos />} />
-        <Route path="/training/algorithms/opbasic/multiplicacion" element={<TrainingAlgorithmsBasicMultipl />} />
-        <Route path="/training/algorithms/opbasic/division" element={<TrainingAlgorithmsBasicDivision />} />
+          {/* Training → Words */}
+          <Route path="training/words" element={<TrainingWords />} />
+          <Route path="training/words/vowels" element={<TrainingWordsVowels />} />
+          <Route path="training/words/things" element={<TrainingWordsThings />} />
 
-        {/* Training → Words */}
-        <Route path="/training/words" element={<TrainingWords />} />
-        <Route path="/training/words/vowels" element={<TrainingWordsVowels />} />
-        <Route path="/training/words/things" element={<TrainingWordsThings />} />
+          {/* Training → Words → Vowels */}
+          <Route path="training/words/vowels/a" element={<TrainingWordVowelA />} />
+          <Route path="training/words/vowels/e" element={<TrainingWordVowelE />} />
+          <Route path="training/words/vowels/i" element={<TrainingWordVowelI />} />
+          <Route path="training/words/vowels/o" element={<TrainingWordVowelO />} />
+          <Route path="training/words/vowels/u" element={<TrainingWordVowelU />} />
 
-        {/* Training → Words → Vowels */}
-        <Route path="/training/words/vowels/a" element={<TrainingWordVowelA />} />
-        <Route path="/training/words/vowels/e" element={<TrainingWordVowelE />} />
-        <Route path="/training/words/vowels/i" element={<TrainingWordVowelI />} />
-        <Route path="/training/words/vowels/o" element={<TrainingWordVowelO />} />
-        <Route path="/training/words/vowels/u" element={<TrainingWordVowelU />} />
-
-        {/* Predictions */}
-        <Route path="/predictions" element={<Predictions />} />
-        <Route path="/predictions/words" element={<PredictionsWords />} />
-        <Route path="/predictions/algorithms" element={<PredictionsAlgorithms />} />
-        <Route path="/predictions/words/vowels" element={<PredictionsVowels />} />
+          {/* Predictions */}
+          <Route path="predictions" element={<Predictions />} />
+          <Route path="predictions/words" element={<PredictionsWords />} />
+          <Route path="predictions/algorithms" element={<PredictionsAlgorithms />} />
+          <Route path="predictions/words/vowels" element={<PredictionsVowels />} />
+        </Route>
       </Routes>
     </Router>
   );

@@ -1,16 +1,16 @@
 /* Contenedor general */
-.predictions-container {
-  display: flex;
+.training-container {
+  display: block;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 0 2rem 4rem 2rem;
   background: #e6f7ff;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Card principal */
-.predictions-card {
+.training-card {
   background: #fff;
   padding: 3rem;
   border-radius: 20px;
@@ -21,7 +21,7 @@
 }
 
 /* Título */
-.predictions-title {
+.training-title {
   font-size: 2rem;
   font-weight: 800;
   color: #1e3a8a;
@@ -29,14 +29,14 @@
 }
 
 /* Subtítulo */
-.predictions-subtitle {
+.training-subtitle {
   font-size: 1.1rem;
   color: #444;
   margin-bottom: 2.5rem;
 }
 
 /* Grid de opciones */
-.predictions-grid {
+.training-grid {
   display: flex;
   justify-content: center;
   gap: 2rem;
@@ -44,7 +44,7 @@
 }
 
 /* Opciones tipo tarjeta */
-.pred-card {
+.training-option {
   background: linear-gradient(135deg, #06d6a0, #118ab2);
   color: white;
   border-radius: 16px;
@@ -61,18 +61,18 @@
   transition: all 0.25s ease;
 }
 
-.pred-card:hover {
+.training-option:hover {
   transform: translateY(-10px) scale(1.05);
   box-shadow: 0 12px 28px rgba(17, 138, 178, 0.5);
 }
 
-.pred-card .icon {
+.training-option .icon {
   font-size: 2.5rem;
   margin-bottom: 0.6rem;
 }
 
 /* Footer */
-.predictions-footer {
+.training-footer {
   margin-top: 2rem;
   font-size: 1rem;
   color: #333;
@@ -82,5 +82,5 @@
   background: rgba(255, 215, 64, 0.15);
   padding: 0.8rem 1.2rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }

@@ -1,5 +1,5 @@
 // src/pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMenos.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useOpbasicLogic } from "../../../../hooks/useOpbasicLogic.js";
 
@@ -45,6 +45,14 @@ export default function TrainingAlgorithmsBasicMenos() {
   // progreso actual de resta
   const progressMenos = appState.opbasicProgress?.menos?.percentage || 0;
 
+  // 🚨 Corte extra por seguridad (igual que en vocales y multiplicación)
+  useEffect(() => {
+    if (progressMenos >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressMenos, appState.isCollecting, stopCollecting]);
+
   // 👉 Botones dentro de CameraSection
   const actionsSlot = (
     <>
@@ -70,10 +78,7 @@ export default function TrainingAlgorithmsBasicMenos() {
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
       </button>
 
-      <button
-        className="action-btn reset-btn"
-        onClick={() => resetData(label)}
-      >
+      <button className="action-btn reset-btn" onClick={() => resetData(label)}>
         🔄 Reiniciar Datos
       </button>
     </>

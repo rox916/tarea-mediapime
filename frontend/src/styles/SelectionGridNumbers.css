@@ -1,0 +1,108 @@
+/* ============================= */
+/* Contenedor principal números  */
+/* ============================= */
+.numbers-container {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 2rem 3rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ============================= */
+/* Título                        */
+/* ============================= */
+.numbers-container h2 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #0d47a1;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.15);
+}
+
+.numbers-container p {
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+/* ============================= */
+/* Grid números                  */
+/* ============================= */
+.numbers-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap; /* responsive: pasa a varias filas en pantallas pequeñas */
+  width: 100%;
+  margin-top: 2rem;
+}
+
+/* ============================= */
+/* Tarjetas números              */
+/* ============================= */
+.number-card {
+  background: linear-gradient(135deg, #42a5f5, #1e88e5); /* azul moderno */
+  color: white;
+  border-radius: 16px;
+  width: 100px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 2rem;
+  font-weight: bold;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover con efecto de brillo */
+.number-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(30, 136, 229, 0.5);
+}
+
+.number-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.08);
+  transform: rotate(25deg);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.number-card:hover::after {
+  opacity: 1;
+}
+
+/* ============================= */
+/* Responsive                    */
+/* ============================= */
+@media (max-width: 768px) {
+  .number-card {
+    width: 80px;
+    height: 100px;
+    font-size: 1.5rem;
+  }
+}

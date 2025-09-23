@@ -1,27 +1,30 @@
 import { Link } from "react-router-dom";
+import "../../styles/Training.css";
 
 export default function Training() {
   return (
-    <div style={{ textAlign: "center", padding: "2rem" }}>
-      <h1>🎛️ Menú de Entrenamientos</h1>
-      <p>Selecciona qué deseas entrenar:</p>
+    <div className="training-container">
+      <div className="training-card">
+        <h2 className="training-title">🎛️ Menú de Entrenamientos</h2>
+        <p className="training-subtitle">
+          Selecciona qué deseas entrenar:
+        </p>
 
-      <div style={{ marginTop: "2rem" }}>
-        <Link to="/training/words">
-          <button
-            style={{ margin: "1rem", padding: "1rem 2rem", fontSize: "1.2rem" }}
-          >
-            📖 Palabras
-          </button>
-        </Link>
+        <div className="training-grid">
+          <Link to="/training/words" className="training-option">
+            <span className="icon">📖</span>
+            <span>Palabras</span>
+          </Link>
 
-        <Link to="/training/algorithms">
-          <button
-            style={{ margin: "1rem", padding: "1rem 2rem", fontSize: "1.2rem" }}
-          >
-            ⚙️ Algoritmos
-          </button>
-        </Link>
+          <Link to="/training/algorithms" className="training-option">
+            <span className="icon">⚙️</span>
+            <span>Algoritmos</span>
+          </Link>
+        </div>
+
+        <div className="training-footer">
+          👉 Selecciona una opción para comenzar tu entrenamiento
+        </div>
       </div>
     </div>
   );
