@@ -1,0 +1,96 @@
+/* ===== Layout general ===== */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #e6f7ff;
+  overflow: hidden;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: #111827;
+  color: #fff;
+  width: 180px;
+  padding: 1rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+/* ===== Header dentro sidebar ===== */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+}
+
+.sidebar-header h2 {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  gap: 0.5rem;
+  margin: 0;
+  color: #f9fafb;
+  font-weight: 700;
+}
+
+/* ===== Secciones ===== */
+.sidebar-section {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin: 1rem 0 0.5rem;
+  letter-spacing: 0.5px;
+  padding-left: 0.5rem;
+}
+
+/* ===== Links ===== */
+.sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: 0.6rem;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  color: #d1d5db;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav a:hover {
+  background: #1f2937;
+  color: #fff;
+}
+
+.sidebar-nav a .icon {
+  font-size: 1rem;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ===== Main content ===== */
+.main-content {
+  margin-left: 180px;
+  flex: 1;
+  padding: 0 1rem;
+  background: #e6f7ff;
+  display: block;
+  min-height: 100vh;
+  box-sizing: border-box;
+}

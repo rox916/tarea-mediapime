@@ -1,0 +1,166 @@
+/* ============================= */
+/* Fondo global                  */
+/* ============================= */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #fff1f2, #fde2e4, #f9fafb);
+  min-height: 100vh;
+  box-sizing: border-box;
+  overflow-x: hidden; /* 🔥 evita borde blanco lateral */
+}
+
+/* ✅ quitamos display:flex aquí, 
+   para que no centre TODO el contenido (ej: la cámara) */
+.main-content {
+  flex: 1;
+  padding: 0 1rem;
+  display: block; /* 🔥 comportamiento normal */
+  box-sizing: border-box;
+}
+
+/* ============================= */
+/* Contenedor principal          */
+/* ============================= */
+.selection-container {
+  background: rgba(255, 255, 255, 0.15); /* efecto vidrio */
+  border-radius: 20px;
+  padding: 2rem 3rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px); 
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ============================= */
+/* Títulos                       */
+/* ============================= */
+.selection-container h2 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #0d47a1;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.15);
+}
+
+.selection-container p {
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+/* ============================= */
+/* Grid en horizontal            */
+/* ============================= */
+.selection-grid {
+  display: flex;                  /* 🔥 siempre en fila */
+  justify-content: center;        /* centra horizontal */
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;                /* 🔥 pasa a otra fila si no entra */
+  width: 100%;
+  margin-top: 2rem;
+}
+
+/* ============================= */
+/* Tarjetas                      */
+/* ============================= */
+.selection-card {
+  background: linear-gradient(135deg, #00c6ff, #0072ff);
+  color: white;
+  border-radius: 18px;
+  width: 160px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover con efecto de brillo */
+.selection-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(0, 114, 255, 0.5);
+}
+
+.selection-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.08);
+  transform: rotate(25deg);
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.selection-card:hover::after {
+  opacity: 1;
+}
+
+/* Ícono/letra */
+.selection-card .icon {
+  font-size: 3rem;
+  margin-bottom: 0.6rem;
+  color: #fff;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+.selection-card span {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* ============================= */
+/* Footer                        */
+/* ============================= */
+.selection-footer {
+  margin-top: 2.5rem;
+  font-size: 1.05rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 215, 64, 0.15);
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.selection-footer::before {
+  content: "👉";
+  font-size: 1.3rem;
+  color: #ff9800;
+}
+
+/* ============================= */
+/* Responsive                    */
+/* ============================= */
+@media (max-width: 768px) {
+  .selection-card {
+    width: 130px;
+    height: 150px;
+  }
+  .selection-container {
+    padding: 1.5rem;
+  }
+}
