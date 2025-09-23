@@ -1,42 +1,43 @@
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
+import { FaTimes, FaDivide, FaMinus, FaPlus } from "react-icons/fa";
+import "../../../../styles/SelectionGrid.css"; // el mismo estilo que vocales y números
 
 export default function TrainingAlgorithmsBasic() {
   const opbasic = [
-    { name: "Multiplicación", key: "multiplicacion", icon: "✖️" }, // 👈 corregido
-    { name: "División", key: "division", icon: "➗" },
-    { name: "Resta", key: "menos", icon: "➖" },
-    { name: "Suma", key: "mas", icon: "➕" },
+    { name: "Multiplicación", key: "multiplicacion", icon: <FaTimes /> },
+    { name: "División", key: "division", icon: <FaDivide /> },
+    { name: "Resta", key: "menos", icon: <FaMinus /> },
+    { name: "Suma", key: "mas", icon: <FaPlus /> },
   ];
 
   return (
-    <div style={{ textAlign: "center", padding: "2rem" }}>
-      <h1>➗ Operaciones Básicas</h1>
-      <p>Aquí podrás entrenar modelos para:</p>
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {opbasic.map((op) => (
-          <li key={op.key}>
-            {op.icon} {op.name}
-          </li>
-        ))}
-      </ul>
-      <div style={{ marginTop: "2rem" }}>
+    <div className="selection-container">
+      {/* Título */}
+      <h2>
+        <FaDivide style={{ color: "#6c63ff" }} />
+        Operaciones Básicas
+      </h2>
+      <p>Aquí podrás entrenar modelos para las operaciones matemáticas:</p>
+
+      {/* Grid */}
+      <div className="selection-grid">
         {opbasic.map((op) => (
           <Link
             key={op.key}
             to={`/training/algorithms/opbasic/${op.key}`}
             style={{ textDecoration: "none" }}
           >
-            <button
-              style={{
-                margin: "0.5rem",
-                padding: "1rem 2rem",
-                fontSize: "1.2rem",
-              }}
-            >
-              {op.name}
-            </button>
+            <div className="selection-card">
+              <div className="icon">{op.icon}</div>
+              <span>{op.name}</span>
+            </div>
           </Link>
         ))}
+      </div>
+
+      {/* Footer */}
+      <div className="selection-footer">
+        👉 Selecciona una operación para comenzar tu entrenamiento
       </div>
     </div>
   );

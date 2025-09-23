@@ -1,31 +1,35 @@
+import React from "react";
 import { Link } from "react-router-dom";
+import { FaA, FaE, FaI, FaO, FaU } from "react-icons/fa6";
+import "../../../../styles/SelectionGrid.css";
 
 export default function TrainingWordsVowels() {
-  const vowels = ["A", "E", "I", "O", "U"];
+  const vowels = [
+    { label: "A", path: "/training/words/vowels/a", icon: <FaA /> },
+    { label: "E", path: "/training/words/vowels/e", icon: <FaE /> },
+    { label: "I", path: "/training/words/vowels/i", icon: <FaI /> },
+    { label: "O", path: "/training/words/vowels/o", icon: <FaO /> },
+    { label: "U", path: "/training/words/vowels/u", icon: <FaU /> },
+  ];
 
   return (
-    <div style={{ textAlign: "center", padding: "2rem" }}>
-      <h1>🔡 Entrenamiento de Vocales</h1>
-      <p>Selecciona la vocal que deseas entrenarr:</p>
+    <div className="selection-container">
+      <h2>🔡 Entrenamiento de Vocales</h2>
+      <p>Selecciona la vocal que deseas entrenar:</p>
 
-      <div style={{ marginTop: "2rem" }}>
+      <div className="selection-grid">
         {vowels.map((v) => (
-          <Link
-            key={v}
-            to={`/training/words/vowels/${v.toLowerCase()}`}
-            style={{ textDecoration: "none" }}
-          >
-            <button
-              style={{
-                margin: "0.5rem",
-                padding: "1rem 2rem",
-                fontSize: "1.2rem",
-              }}
-            >
-              {v}
-            </button>
+          <Link to={v.path} key={v.label} style={{ textDecoration: "none" }}>
+            <div className="selection-card">
+              <div className="icon">{v.icon}</div>
+              <span>{v.label}</span>
+            </div>
           </Link>
         ))}
+      </div>
+
+      <div className="selection-footer">
+        👆 Selecciona una vocal para comenzar tu entrenamiento
       </div>
     </div>
   );

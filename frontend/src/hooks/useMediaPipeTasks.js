@@ -22,10 +22,6 @@ export const useMediaPipeTasks = ({
   isPredicting,
   onLandmarks,
   onPredict,
-  vowelProgress,
-  numberProgress,
-  opbasicProgress,
-  onStopCollecting,   // 👈 callback para cortar recolección
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -94,19 +90,11 @@ export const useMediaPipeTasks = ({
     initModel();
 
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
       landmarkerRef.current = null;
     };
   }, []);
-
-  // 🔎 Función auxiliar para obtener progreso
-  const getProgress = (label) => {
-    if (!label) return 0;
-    if (vowelProgress?.[label]) return vowelProgress[label].percentage || 0;
-    if (numberProgress?.[label]) return numberProgress[label].percentage || 0;
-    if (opbasicProgress?.[label]) return opbasicProgress[label].percentage || 0;
-    return 0;
-  };
 
   // 3️⃣ Render loop
   useEffect(() => {
@@ -154,7 +142,13 @@ export const useMediaPipeTasks = ({
           ctx.fillStyle = "red";
           for (const point of landmarks) {
             ctx.beginPath();
-            ctx.arc(point.x * canvas.width, point.y * canvas.height, 4, 0, 2 * Math.PI);
+            ctx.arc(
+              point.x * canvas.width,
+              point.y * canvas.height,
+              4,
+              0,
+              2 * Math.PI
+            );
             ctx.fill();
           }
 
@@ -162,15 +156,8 @@ export const useMediaPipeTasks = ({
           const currentLabel = currentVowel || currentOpbasic || currentNumber;
 
           if (isCollecting && currentLabel && onLandmarks) {
-            const progress = getProgress(currentLabel);
-
-            if (progress < 100) {
-              onLandmarks(landmarks, currentLabel);
-            } else {
-              console.log(`🛑 ${currentLabel} llegó al 100%, deteniendo recolección.`);
-              onStopCollecting?.(currentLabel); // 🔥 corta ya
-              return; // 🚫 no seguir mandando landmarks
-            }
+            // 🔹 Solo manda landmarks; la lógica de cortar está en cada hook
+            onLandmarks(landmarks, currentLabel);
           }
 
           if (isModelTrained && isPredicting && onPredict) {
@@ -196,10 +183,6 @@ export const useMediaPipeTasks = ({
     isPredicting,
     onLandmarks,
     onPredict,
-    vowelProgress,
-    numberProgress,
-    opbasicProgress,
-    onStopCollecting,
   ]);
 
   return { isInitialized, isCameraReady, error };

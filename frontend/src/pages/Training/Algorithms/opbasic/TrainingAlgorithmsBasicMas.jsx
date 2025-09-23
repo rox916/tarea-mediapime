@@ -1,5 +1,5 @@
 // src/pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMas.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useOpbasicLogic } from "../../../../hooks/useOpbasicLogic.js";
 
@@ -27,6 +27,9 @@ export default function TrainingAlgorithmsBasicMas() {
     handlePredict,
   } = useOpbasicLogic({ setModalData });
 
+  // 👈 usamos directamente "mas" (nombre humano esperado por el backend)
+  const label = "mas";
+
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
   const { isInitialized, error } = useMediaPipeTasks({
     videoRef,
@@ -35,12 +38,20 @@ export default function TrainingAlgorithmsBasicMas() {
     currentOpbasic: appState.currentOpbasic,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
-    onLandmarks: (landmarks) => handleLandmarks(landmarks, "mas"),   // fijo a "mas"
-    onPredict: (landmarks) => handlePredict(landmarks, "mas"),       // fijo a "mas"
+    onLandmarks: (landmarks) => handleLandmarks(landmarks, label),
+    onPredict: (landmarks) => handlePredict(landmarks, label),
   });
 
   // progreso actual de suma
   const progressMas = appState.opbasicProgress?.mas?.percentage || 0;
+
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progressMas >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressMas, appState.isCollecting, stopCollecting]);
 
   // 👉 Botones dentro de CameraSection
   const actionsSlot = (
@@ -52,7 +63,7 @@ export default function TrainingAlgorithmsBasicMas() {
       ) : (
         <button
           className="action-btn collect-btn"
-          onClick={() => startCollecting("mas")}
+          onClick={() => startCollecting(label)}
           disabled={progressMas >= 100}
         >
           🎤 Recolectar 'Suma'
@@ -61,13 +72,13 @@ export default function TrainingAlgorithmsBasicMas() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel("mas")}
+        onClick={() => trainModel(label)}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
       </button>
 
-      <button className="action-btn reset-btn" onClick={() => resetData("mas")}>
+      <button className="action-btn reset-btn" onClick={() => resetData(label)}>
         🔄 Reiniciar Datos
       </button>
     </>

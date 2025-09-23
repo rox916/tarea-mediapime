@@ -33,7 +33,7 @@ export const useVocalLogic = ({ setModalData }) => {
     vowelProgress: {},
   });
 
-  // --- Obtener progreso ---
+  // --- Obtener progreso desde API ---
   const fetchProgress = useCallback(async () => {
     try {
       const progressData = await apiService.getVowelProgress();
@@ -49,11 +49,6 @@ export const useVocalLogic = ({ setModalData }) => {
           (progressData.configuracion?.samples_recomendados ||
             SAMPLES_PER_VOWEL);
         const totalProgress = (totalSamples / totalRequired) * 100;
-
-        const newStatusMessage =
-          totalProgress >= 100
-            ? STATUS_MESSAGES.READY_TO_TRAIN
-            : prev.statusMessage;
 
         const normalizedVowelProgress = {};
         VOWELS.forEach((v) => {
@@ -71,7 +66,6 @@ export const useVocalLogic = ({ setModalData }) => {
           };
         });
 
-        // 👇 Marcar modelo como entrenado si alguno existe
         const someModelTrained = VOWELS.some(
           (v) => progressData.estadisticas_vocales?.[v]?.tiene_modelo
         );
@@ -86,7 +80,10 @@ export const useVocalLogic = ({ setModalData }) => {
               percentage: totalProgress,
             },
           },
-          statusMessage: newStatusMessage,
+          statusMessage:
+            totalProgress >= 100
+              ? STATUS_MESSAGES.READY_TO_TRAIN
+              : prev.statusMessage,
           isModelTrained: someModelTrained,
         };
       });
@@ -98,58 +95,53 @@ export const useVocalLogic = ({ setModalData }) => {
   // --- Guardar landmarks ---
   const handleLandmarks = useCallback(
     async (landmarks, vowel) => {
-      if (!appState.isCollecting) return;
+      setAppState((prev) => {
+        if (!prev.isCollecting) return prev;
 
-      // 🔎 Verificar si ya está al 100%
-      const progress = appState.vowelProgress?.[vowel]?.percentage || 0;
-      if (progress >= 100) {
-        console.log(`⚠️ La vocal '${vowel}' ya alcanzó el 100%, auto-stop.`);
-        setAppState((prev) => ({
-          ...prev,
-          isCollecting: false,
-          currentVowel: null,
-          statusMessage: `La vocal '${vowel}' ya completó la recolección.`,
-        }));
-        return;
-      }
-
-      try {
-        await apiService.sendVowelLandmarks(landmarks, vowel.toLowerCase());
-
-        // ⚡ Actualizamos estado local rápidamente
-        setAppState((prev) => {
-          const current = prev.vowelProgress[vowel] || {
-            count: 0,
-            max: SAMPLES_PER_VOWEL,
-            percentage: 0,
-          };
-
-          const newCount = current.count + 1;
-          const newPercentage = Math.min(
-            100,
-            (newCount / (current.max || SAMPLES_PER_VOWEL)) * 100
-          );
-
+        const progress = prev.vowelProgress?.[vowel]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⚠️ La vocal '${vowel}' ya alcanzó el 100%, auto-stop.`);
           return {
             ...prev,
-            vowelProgress: {
-              ...prev.vowelProgress,
-              [vowel]: {
-                ...current,
-                count: newCount,
-                percentage: newPercentage,
-              },
-            },
+            isCollecting: false,
+            currentVowel: null,
+            statusMessage: `La vocal '${vowel}' ya completó la recolección.`,
           };
-        });
+        }
 
-        // 🔄 Refrescar en background
-        fetchProgress();
-      } catch (error) {
-        console.error("Error al agregar muestra:", error);
-      }
+        // seguimos recolectando, enviamos async
+        apiService
+          .sendVowelLandmarks(landmarks, vowel.toLowerCase())
+          .then(() => fetchProgress())
+          .catch((error) => console.error("Error al agregar muestra:", error));
+
+        // actualización rápida local
+        const current = prev.vowelProgress[vowel] || {
+          count: 0,
+          max: SAMPLES_PER_VOWEL,
+          percentage: 0,
+        };
+
+        const newCount = current.count + 1;
+        const newPercentage = Math.min(
+          100,
+          (newCount / (current.max || SAMPLES_PER_VOWEL)) * 100
+        );
+
+        return {
+          ...prev,
+          vowelProgress: {
+            ...prev.vowelProgress,
+            [vowel]: {
+              ...current,
+              count: newCount,
+              percentage: newPercentage,
+            },
+          },
+        };
+      });
     },
-    [appState.isCollecting, appState.vowelProgress, fetchProgress]
+    [fetchProgress]
   );
 
   // --- Predicción ---
@@ -159,9 +151,7 @@ export const useVocalLogic = ({ setModalData }) => {
 
   const handlePredict = useCallback(
     async (landmarks) => {
-      if (!appState.isPredicting || predictionInProgress.current) {
-        return;
-      }
+      if (!appState.isPredicting || predictionInProgress.current) return;
 
       const now = Date.now();
       if (now - lastPredictionTime.current < PREDICTION_THROTTLE_MS) return;
@@ -171,7 +161,6 @@ export const useVocalLogic = ({ setModalData }) => {
 
       try {
         const result = await apiService.predictVowelGeneral(landmarks);
-
         setAppState((prev) => ({
           ...prev,
           prediction: result.prediction,
@@ -309,17 +298,19 @@ export const useVocalLogic = ({ setModalData }) => {
     handleLandmarks,
     handlePredict,
     startCollecting: (vowel) => {
-      const progress = appState.vowelProgress?.[vowel]?.percentage || 0;
-      if (progress >= 100) {
-        console.log(`⛔ No se puede recolectar '${vowel}', ya está al 100%.`);
-        return;
-      }
-      setAppState((prev) => ({
-        ...prev,
-        isCollecting: true,
-        currentVowel: vowel.toLowerCase(),
-        statusMessage: STATUS_MESSAGES.COLLECTING(vowel.toLowerCase()),
-      }));
+      setAppState((prev) => {
+        const progress = prev.vowelProgress?.[vowel]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⛔ No se puede recolectar '${vowel}', ya está al 100%.`);
+          return prev;
+        }
+        return {
+          ...prev,
+          isCollecting: true,
+          currentVowel: vowel.toLowerCase(),
+          statusMessage: STATUS_MESSAGES.COLLECTING(vowel.toLowerCase()),
+        };
+      });
     },
     stopCollecting: () =>
       setAppState((prev) => ({

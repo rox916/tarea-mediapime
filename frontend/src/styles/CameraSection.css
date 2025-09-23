@@ -1,175 +1,152 @@
-/* Contenedor principal de la tarjeta de cámara */
+/* ========================= */
+/* Contenedor principal      */
+/* ========================= */
 .camera-section {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  justify-content: flex-start;   /* 🔥 sube el contenido hacia arriba */
+
+  width: 95%;
+  margin: 1rem auto;            /* 🔥 menos margen arriba/abajo */
+  padding: 1.5rem;              /* 🔽 menos padding vertical */
+
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
 }
 
-/* Contenedor de la cámara */
+.camera-section h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;           /* 🔽 menos espacio debajo del título */
+  color: #0d47a1;
+  text-shadow: 1px 2px 6px rgba(0,0,0,0.25);
+  width: 100%;
+  text-align: center;
+}
+
+/* ========================= */
+/* Cámara                    */
+/* ========================= */
 .camera-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9; /* mantiene proporción */
-  border-radius: 10px;
+  max-width: 900px;     /* 🔥 más ancha para destacar */
+  aspect-ratio: 16 / 9;
+  margin: 0 auto 1.5rem;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  background: #000;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+
+  max-height: 520px;   /* 🔥 más alta */
 }
 
-/* Video y canvas alineados */
 .camera-feed,
 .canvas-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1);
 }
 
-.canvas-overlay {
-  pointer-events: none;
-}
-
-/* --- BARRA DE PROGRESO --- */
+/* ========================= */
+/* Barra de progreso         */
+/* ========================= */
 .progress-container {
-  margin-top: 12px;
   width: 100%;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  height: 14px;
+  max-width: 900px;        /* 🔽 acompaña a la cámara */
+  height: 10px;            /* 🔽 más delgada */
+  margin: 0.8rem auto 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
   overflow: hidden;
-  position: relative;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.25);
 }
 
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #2196f3, #4caf50);
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #00c6ff, #0072ff, #4caf50);
+  transition: width 0.4s ease;
 }
 
 .progress-text {
-  margin-top: 4px;
-  font-size: 0.9rem;
-  text-align: center;
-  color: #e0e0e0;
-}
-
-/* --- PREDICCIÓN --- */
-.prediction-row {
-  margin-top: 15px;
-  display: flex;
-  justify-content: center; /* centrado debajo de la cámara */
-  align-items: center;
-  gap: 1rem;
-}
-
-.prediction-toggle {
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;       /* 🔽 más pequeño */
   font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.prediction-toggle.active {
-  background: linear-gradient(135deg, #ef476f, #d62828);
-  color: #fff;
-}
-
-.prediction-toggle:not(.active) {
-  background: linear-gradient(135deg, #06d6a0, #118ab2);
-  color: #fff;
-}
-
-.prediction-display {
-  padding: 0.8rem;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  color: #222;
   text-align: center;
-  width: 200px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
 
-.prediction-letter {
-  font-size: 3rem;
-  font-weight: 800;
-  margin: 0.3rem 0;
-  color: #06d6a0;
-  text-shadow: 1px 1px 6px rgba(0,0,0,0.4);
-}
-
-.prediction-confidence {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #f4a261;
-  margin-top: 0.3rem;
-}
-
-/* --- FOOTER DENTRO DE LA CÁMARA --- */
+/* ========================= */
+/* Footer: pasos + botones   */
+/* ========================= */
 .camera-footer {
-  margin-top: 20px;
+  margin-top: 1.5rem;
   display: flex;
-  justify-content: space-between; /* pasos a la izquierda, botones a la derecha */
+  justify-content: space-between;
   align-items: flex-start;
+  gap: 1rem;
+
   width: 100%;
-  gap: 2rem;
+  max-width: 900px;        /* 🔽 sigue el ancho de la cámara */
+  margin-left: auto;
+  margin-right: auto;
+  flex-wrap: wrap;
+  padding-bottom: 1rem;
 }
 
-/* --- PASOS DE ENTRENAMIENTO (IZQUIERDA) --- */
+/* Pasos */
 .training-steps {
   flex: 1;
-  max-width: 280px;
-  font-size: 0.95rem;
-  color: #e0e0e0;
+  min-width: 220px;        /* 🔽 más compacta */
+  padding: 0.8rem 1rem;    /* 🔽 menos padding */
+  background: rgba(255,255,255,0.14);
+  border-radius: 10px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .training-steps h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
+  margin-bottom: 0.4rem;
+  font-size: 1rem;         /* 🔽 más pequeño */
   font-weight: 700;
-  color: #fff;
-}
-
-.training-steps ol {
-  padding-left: 1.2rem;
+  color: #0d47a1;
 }
 
 .training-steps li {
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+  margin-bottom: 0.3rem;
+  color: #333;
+  font-size: 0.85rem;      /* 🔽 más chico */
+  line-height: 1.4;
 }
 
-/* --- BOTONES (DERECHA, VERTICALES) --- */
+/* Botones */
 .camera-actions {
   display: flex;
-  flex-direction: column;   /* ✅ apilados en vertical */
-  align-items: flex-end;    /* ✅ pegados a la derecha */
-  gap: 0.8rem;
+  flex-direction: column;
+  gap: 0.6rem;             /* 🔽 menos espacio entre botones */
   flex: 1;
+  min-width: 200px;
 }
 
-/* Botones más grandes */
 .camera-actions .action-btn {
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  padding: 0.6rem 1rem;    /* 🔽 más pequeños */
+  font-size: 0.9rem;       /* 🔽 más chico */
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease, opacity 0.2s ease;
+  transition: all 0.3s ease;
   color: #fff;
-  min-width: 200px; /* ancho uniforme */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   text-align: center;
+  min-width: 180px;
 }
 
 /* 🎤 Recolectar */
@@ -202,4 +179,39 @@
 }
 .camera-actions .reset-btn:hover {
   background: linear-gradient(135deg, #2c4db2, #1e40af);
+}
+
+/* ========================= */
+/* Estados                   */
+/* ========================= */
+.error-message, .loading-message {
+  margin: 1rem 0;
+  padding: 0.8rem;         /* 🔽 menos espacio */
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;       /* 🔽 más pequeño */
+  max-width: 100%;
+}
+
+.error-message {
+  background: rgba(255, 0, 0, 0.12);
+  color: #b71c1c;
+}
+
+.loading-message {
+  background: rgba(0, 150, 255, 0.12);
+  color: #01579b;
+}
+
+.prediction-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;        /* 🔽 bajamos un poco */
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0px 0px 20px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
 }

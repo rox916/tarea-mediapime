@@ -37,14 +37,11 @@ export default function TrainingWordVowelA() {
     currentVowel: appState.currentVowel,
     isModelTrained: appState.isModelTrained,
     isPredicting: appState.isPredicting,
-    vowelProgress: appState.vowelProgress,   // 👈 pasamos progreso
+    vowelProgress: appState.vowelProgress,
     onLandmarks: handleLandmarks,
     onPredict: handlePredict,
-    onStopCollecting: () => {                // 👈 callback desde el hook
-      console.log("🛑 Auto-stop desde useMediaPipeTasks (100% alcanzado).");
-      stopCollecting();
-    },
   });
+
 
   // 🚨 Corte extra por seguridad
   useEffect(() => {

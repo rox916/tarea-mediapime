@@ -5,7 +5,6 @@ import { apiService } from "../services/api.js";
 const NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const SAMPLES_PER_NUMBER = 100;
 
-// Mensajes de estado centralizados para números
 const STATUS_MESSAGES_NUMBERS = {
   IDLE: "Inactivo. Selecciona un número para empezar a recolectar.",
   COLLECTING: (n) => `Recolectando muestras para el número '${n}'.`,
@@ -87,15 +86,55 @@ export const useNumberLogic = ({ setModalData }) => {
   // --- Guardar landmarks ---
   const handleLandmarks = useCallback(
     async (landmarks, number) => {
-      if (!appState.isCollecting) return;
-      try {
-        await apiService.sendNumberLandmarks(landmarks, number);
-        await fetchProgress();
-      } catch (error) {
-        console.error("Error al agregar muestra:", error);
-      }
+      setAppState((prev) => {
+        if (!prev.isCollecting) return prev;
+
+        const progress = prev.numberProgress?.[number]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⚠️ El número '${number}' ya alcanzó el 100%, auto-stop.`);
+          return {
+            ...prev,
+            isCollecting: false,
+            currentNumber: null,
+            statusMessage: `El número '${number}' ya completó la recolección.`,
+          };
+        }
+
+        // Enviamos async al backend
+        apiService
+          .sendNumberLandmarks(landmarks, number)
+          .then(() => fetchProgress())
+          .catch((error) =>
+            console.error("Error al agregar muestra de número:", error)
+          );
+
+        // Actualización rápida local
+        const current = prev.numberProgress[number] || {
+          count: 0,
+          max: SAMPLES_PER_NUMBER,
+          percentage: 0,
+        };
+
+        const newCount = current.count + 1;
+        const newPercentage = Math.min(
+          100,
+          (newCount / (current.max || SAMPLES_PER_NUMBER)) * 100
+        );
+
+        return {
+          ...prev,
+          numberProgress: {
+            ...prev.numberProgress,
+            [number]: {
+              ...current,
+              count: newCount,
+              percentage: newPercentage,
+            },
+          },
+        };
+      });
     },
-    [appState.isCollecting, fetchProgress]
+    [fetchProgress]
   );
 
   // --- Predicción con throttling ---
@@ -197,7 +236,7 @@ export const useNumberLogic = ({ setModalData }) => {
     [fetchProgress, setModalData]
   );
 
-  // --- Eliminar datos de un número ---
+  // --- Eliminar datos ---
   const deleteNumberData = useCallback(
     (number) => {
       setModalData({
@@ -247,7 +286,7 @@ export const useNumberLogic = ({ setModalData }) => {
     return () => clearInterval(interval);
   }, [fetchProgress, appState.isCollecting]);
 
-  // 👇 Ya es booleano
+  // --- Validación para permitir entrenamiento ---
   const canTrain = Object.values(appState.numberProgress || {}).some(
     (n) => n.count >= 2
   );
@@ -257,12 +296,19 @@ export const useNumberLogic = ({ setModalData }) => {
     handleLandmarks,
     handlePredict,
     startCollecting: (number) =>
-      setAppState((prev) => ({
-        ...prev,
-        isCollecting: true,
-        currentNumber: number,
-        statusMessage: STATUS_MESSAGES_NUMBERS.COLLECTING(number),
-      })),
+      setAppState((prev) => {
+        const progress = prev.numberProgress?.[number]?.percentage || 0;
+        if (progress >= 100) {
+          console.log(`⛔ No se puede recolectar '${number}', ya está al 100%.`);
+          return prev;
+        }
+        return {
+          ...prev,
+          isCollecting: true,
+          currentNumber: number,
+          statusMessage: STATUS_MESSAGES_NUMBERS.COLLECTING(number),
+        };
+      }),
     stopCollecting: () =>
       setAppState((prev) => ({
         ...prev,

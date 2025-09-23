@@ -1,5 +1,5 @@
-// src/pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber0.jsx
-import React, { useRef, useState } from "react";
+// src/pages/Training/Algorithms/numbers/TrainingAlgorithmsNumber2.jsx
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useNumberLogic } from "../../../../hooks/useNumberLogic.js";
 
@@ -42,8 +42,16 @@ export default function TrainingAlgorithmsNumber2() {
     onPredict: (landmarks) => handlePredict(landmarks, label),
   });
 
-  // Progreso actual del número 0
+  // Progreso actual del número 2
   const progress = appState.numberProgress?.[label]?.percentage || 0;
+
+  // 🚨 Corte extra por seguridad
+  useEffect(() => {
+    if (progress >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado para '2', deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progress, appState.isCollecting, stopCollecting]);
 
   const actionsSlot = (
     <>
@@ -69,10 +77,7 @@ export default function TrainingAlgorithmsNumber2() {
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
       </button>
 
-      <button
-        className="action-btn reset-btn"
-        onClick={() => resetData(label)}
-      >
+      <button className="action-btn reset-btn" onClick={() => resetData(label)}>
         🔄 Reiniciar Datos
       </button>
     </>

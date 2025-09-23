@@ -1,5 +1,5 @@
 // src/pages/Training/Algorithms/opbasic/TrainingAlgorithmsBasicMultipl.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useMediaPipeTasks } from "../../../../hooks/useMediaPipeTasks.js";
 import { useOpbasicLogic } from "../../../../hooks/useOpbasicLogic.js";
 
@@ -27,7 +27,7 @@ export default function TrainingAlgorithmsBasicMultipl() {
     handlePredict,
   } = useOpbasicLogic({ setModalData });
 
-  // 👈 usamos nombre humano directamente
+  // 👈 usamos directamente "multiplicacion" (nombre humano esperado por el backend)
   const label = "multiplicacion";
 
   // ✅ Inicializar cámara y modelo con MediaPipe Tasks
@@ -42,9 +42,17 @@ export default function TrainingAlgorithmsBasicMultipl() {
     onPredict: (landmarks) => handlePredict(landmarks, label),
   });
 
-  // Progreso actual de multiplicación
+  // progreso actual de multiplicación
   const progressMultipl =
     appState.opbasicProgress?.multiplicacion?.percentage || 0;
+
+  // 🚨 Corte extra por seguridad (igual que en "menos" y en vocales)
+  useEffect(() => {
+    if (progressMultipl >= 100 && appState.isCollecting) {
+      console.log("🛑 Progreso completado, deteniendo recolección automáticamente.");
+      stopCollecting();
+    }
+  }, [progressMultipl, appState.isCollecting, stopCollecting]);
 
   // 👉 Botones dentro de CameraSection
   const actionsSlot = (
@@ -56,7 +64,7 @@ export default function TrainingAlgorithmsBasicMultipl() {
       ) : (
         <button
           className="action-btn collect-btn"
-          onClick={() => startCollecting(label)} // 👈 usamos "multiplicacion"
+          onClick={() => startCollecting(label)}
           disabled={progressMultipl >= 100}
         >
           🎤 Recolectar 'Multiplicación'
@@ -65,7 +73,7 @@ export default function TrainingAlgorithmsBasicMultipl() {
 
       <button
         className="action-btn train-btn"
-        onClick={() => trainModel(label)} // 👈 usamos "multiplicacion"
+        onClick={() => trainModel(label)}
         disabled={appState.isTraining}
       >
         {appState.isTraining ? "⏳ Entrenando..." : "🧠 Entrenar Modelo"}
@@ -87,7 +95,8 @@ export default function TrainingAlgorithmsBasicMultipl() {
             isInitialized={isInitialized}
             error={error}
             actionsSlot={actionsSlot}
-            progress={progressMultipl} // 👇 progreso específico
+            // 👇 progreso específico de multiplicación
+            progress={progressMultipl}
           />
         </div>
 
